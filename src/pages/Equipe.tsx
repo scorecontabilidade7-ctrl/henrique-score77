@@ -3,7 +3,7 @@ import { useStore } from '../data/store'
 import type { Membro } from '../types'
 import { cargaPorMembro } from '../lib/workload'
 import { CORES_AVATAR } from '../lib/labels'
-import { Avatar, EmptyState, Modal } from '../components/ui'
+import { Avatar, Campo, EmptyState, Modal } from '../components/ui'
 import { IconEditar, IconPlus } from '../components/icons'
 
 function MembroForm({ membro, onClose }: { membro?: Membro | null; onClose: () => void }) {
@@ -52,31 +52,30 @@ function MembroForm({ membro, onClose }: { membro?: Membro | null; onClose: () =
       }
     >
       <div className="space-y-4">
-        <div>
-          <label className="label">Nome *</label>
+        <Campo label="Nome *">
           <input className="input" value={nome} onChange={(e) => setNome(e.target.value)} autoFocus />
-        </div>
+        </Campo>
         <div className="grid grid-cols-2 gap-4">
-          <div>
-            <label className="label">Cargo</label>
+          <Campo label="Cargo">
             <input className="input" value={cargo} onChange={(e) => setCargo(e.target.value)} placeholder="Ex.: Analista fiscal" />
-          </div>
-          <div>
-            <label className="label">E-mail</label>
+          </Campo>
+          <Campo label="E-mail">
             <input className="input" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="nome@escritorio.com.br" />
-          </div>
+          </Campo>
         </div>
-        <div>
-          <label className="label">Cor do avatar</label>
+        <div role="group" aria-label="Cor do avatar">
+          <span className="label">Cor do avatar</span>
           <div className="flex flex-wrap gap-2">
-            {CORES_AVATAR.map((c) => (
+            {CORES_AVATAR.map((c, i) => (
               <button
                 key={c}
+                type="button"
                 onClick={() => setCor(c)}
+                aria-pressed={cor === c}
+                aria-label={`Cor ${i + 1}`}
                 className={`h-8 w-8 rounded-full ${c} ${
                   cor === c ? 'ring-2 ring-slate-800 ring-offset-2' : ''
                 }`}
-                aria-label={c}
               />
             ))}
           </div>
@@ -128,7 +127,7 @@ export default function Equipe() {
                   </div>
                 </div>
                 <button
-                  className="btn-ghost h-8 w-8 !p-0"
+                  className="btn-ghost h-9 w-9 !p-0"
                   onClick={() => setForm({ open: true, membro })}
                   aria-label="Editar"
                 >

@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { useStore } from '../data/store'
 import type { Cliente, RegimeTributario } from '../types'
 import { REGIMES, regimeLabel } from '../lib/labels'
-import { Avatar, Badge, EmptyState, Modal } from '../components/ui'
+import { Avatar, Badge, Campo, EmptyState, Modal } from '../components/ui'
 import { IconEditar, IconPlus } from '../components/icons'
 
 function ClienteForm({ cliente, onClose }: { cliente?: Cliente | null; onClose: () => void }) {
@@ -50,17 +50,14 @@ function ClienteForm({ cliente, onClose }: { cliente?: Cliente | null; onClose: 
       }
     >
       <div className="space-y-4">
-        <div>
-          <label className="label">Nome / Razão social *</label>
+        <Campo label="Nome / Razão social *">
           <input className="input" value={nome} onChange={(e) => setNome(e.target.value)} autoFocus />
-        </div>
+        </Campo>
         <div className="grid grid-cols-2 gap-4">
-          <div>
-            <label className="label">CNPJ</label>
+          <Campo label="CNPJ">
             <input className="input" value={cnpj} onChange={(e) => setCnpj(e.target.value)} placeholder="00.000.000/0000-00" />
-          </div>
-          <div>
-            <label className="label">Regime tributário</label>
+          </Campo>
+          <Campo label="Regime tributário">
             <select className="input" value={regime} onChange={(e) => setRegime(e.target.value as RegimeTributario)}>
               {REGIMES.map((r) => (
                 <option key={r.id} value={r.id}>
@@ -68,11 +65,10 @@ function ClienteForm({ cliente, onClose }: { cliente?: Cliente | null; onClose: 
                 </option>
               ))}
             </select>
-          </div>
+          </Campo>
         </div>
         <div className="grid grid-cols-2 gap-4">
-          <div>
-            <label className="label">Responsável</label>
+          <Campo label="Responsável">
             <select className="input" value={responsavelId} onChange={(e) => setResponsavelId(e.target.value)}>
               <option value="">— Sem responsável —</option>
               {membros.map((m) => (
@@ -81,14 +77,13 @@ function ClienteForm({ cliente, onClose }: { cliente?: Cliente | null; onClose: 
                 </option>
               ))}
             </select>
-          </div>
-          <div>
-            <label className="label">Situação</label>
+          </Campo>
+          <Campo label="Situação">
             <select className="input" value={ativo ? 'sim' : 'nao'} onChange={(e) => setAtivo(e.target.value === 'sim')}>
               <option value="sim">Ativo</option>
               <option value="nao">Inativo</option>
             </select>
-          </div>
+          </Campo>
         </div>
       </div>
     </Modal>
@@ -172,7 +167,7 @@ export default function Clientes() {
                       </td>
                       <td className="px-5 py-3 text-right">
                         <button
-                          className="btn-ghost h-8 w-8 !p-0"
+                          className="btn-ghost h-9 w-9 !p-0"
                           onClick={() => setForm({ open: true, cliente: c })}
                           aria-label="Editar"
                         >

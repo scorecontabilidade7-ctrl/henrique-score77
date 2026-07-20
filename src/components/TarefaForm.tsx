@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { useStore } from '../data/store'
 import type { Prioridade, StatusTarefa, Tarefa, TipoTarefa } from '../types'
 import { PRIORIDADES, STATUS_TAREFA, TIPOS_TAREFA } from '../lib/labels'
-import { Modal } from './ui'
+import { Campo, Modal } from './ui'
 
 interface Props {
   tarefa?: Tarefa | null
@@ -74,8 +74,7 @@ export default function TarefaForm({ tarefa, statusInicial, onClose }: Props) {
       }
     >
       <div className="space-y-4">
-        <div>
-          <label className="label">Título *</label>
+        <Campo label="Título *">
           <input
             className="input"
             value={titulo}
@@ -83,21 +82,19 @@ export default function TarefaForm({ tarefa, statusInicial, onClose }: Props) {
             placeholder="Ex.: Apurar DAS do Simples Nacional"
             autoFocus
           />
-        </div>
+        </Campo>
 
-        <div>
-          <label className="label">Descrição</label>
+        <Campo label="Descrição">
           <textarea
             className="input min-h-[72px] resize-y"
             value={descricao}
             onChange={(e) => setDescricao(e.target.value)}
             placeholder="Detalhes, observações, o que precisa ser feito…"
           />
-        </div>
+        </Campo>
 
         <div className="grid grid-cols-2 gap-4">
-          <div>
-            <label className="label">Cliente</label>
+          <Campo label="Cliente">
             <select
               className="input"
               value={clienteId}
@@ -113,9 +110,8 @@ export default function TarefaForm({ tarefa, statusInicial, onClose }: Props) {
                 </option>
               ))}
             </select>
-          </div>
-          <div>
-            <label className="label">Responsável</label>
+          </Campo>
+          <Campo label="Responsável">
             <select
               className="input"
               value={responsavelId}
@@ -128,12 +124,11 @@ export default function TarefaForm({ tarefa, statusInicial, onClose }: Props) {
                 </option>
               ))}
             </select>
-          </div>
+          </Campo>
         </div>
 
         <div className="grid grid-cols-2 gap-4">
-          <div>
-            <label className="label">Tipo</label>
+          <Campo label="Tipo">
             <select className="input" value={tipo} onChange={(e) => setTipo(e.target.value as TipoTarefa)}>
               {TIPOS_TAREFA.map((t) => (
                 <option key={t.id} value={t.id}>
@@ -141,9 +136,8 @@ export default function TarefaForm({ tarefa, statusInicial, onClose }: Props) {
                 </option>
               ))}
             </select>
-          </div>
-          <div>
-            <label className="label">Prioridade</label>
+          </Campo>
+          <Campo label="Prioridade">
             <select
               className="input"
               value={prioridade}
@@ -155,12 +149,11 @@ export default function TarefaForm({ tarefa, statusInicial, onClose }: Props) {
                 </option>
               ))}
             </select>
-          </div>
+          </Campo>
         </div>
 
         <div className="grid grid-cols-2 gap-4">
-          <div>
-            <label className="label">Status</label>
+          <Campo label="Status">
             <select
               className="input"
               value={status}
@@ -172,21 +165,19 @@ export default function TarefaForm({ tarefa, statusInicial, onClose }: Props) {
                 </option>
               ))}
             </select>
-          </div>
-          <div>
-            <label className="label">Prazo</label>
+          </Campo>
+          <Campo label="Prazo">
             <input
               type="date"
               className="input"
               value={prazo}
               onChange={(e) => setPrazo(e.target.value)}
             />
-          </div>
+          </Campo>
         </div>
 
         {tipo === 'consultoria' && projetosDoCliente.length > 0 && (
-          <div>
-            <label className="label">Projeto</label>
+          <Campo label="Projeto">
             <select
               className="input"
               value={projetoId}
@@ -199,7 +190,7 @@ export default function TarefaForm({ tarefa, statusInicial, onClose }: Props) {
                 </option>
               ))}
             </select>
-          </div>
+          </Campo>
         )}
       </div>
     </Modal>

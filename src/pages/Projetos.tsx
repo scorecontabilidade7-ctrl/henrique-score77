@@ -3,7 +3,7 @@ import { useStore } from '../data/store'
 import type { Projeto, StatusProjeto } from '../types'
 import { STATUS_PROJETO, statusProjeto } from '../lib/labels'
 import { formatarData } from '../lib/dates'
-import { Badge, EmptyState, Modal } from '../components/ui'
+import { Badge, Campo, EmptyState, Modal } from '../components/ui'
 import { IconEditar, IconPlus } from '../components/icons'
 
 function ProjetoForm({ projeto, onClose }: { projeto?: Projeto | null; onClose: () => void }) {
@@ -59,12 +59,10 @@ function ProjetoForm({ projeto, onClose }: { projeto?: Projeto | null; onClose: 
       }
     >
       <div className="space-y-4">
-        <div>
-          <label className="label">Nome do projeto *</label>
+        <Campo label="Nome do projeto *">
           <input className="input" value={nome} onChange={(e) => setNome(e.target.value)} autoFocus placeholder="Ex.: Planejamento tributário 2026" />
-        </div>
-        <div>
-          <label className="label">Cliente *</label>
+        </Campo>
+        <Campo label="Cliente *">
           <select className="input" value={clienteId} onChange={(e) => setClienteId(e.target.value)}>
             <option value="">— Selecione —</option>
             {clientes.map((c) => (
@@ -73,14 +71,12 @@ function ProjetoForm({ projeto, onClose }: { projeto?: Projeto | null; onClose: 
               </option>
             ))}
           </select>
-        </div>
-        <div>
-          <label className="label">Descrição</label>
+        </Campo>
+        <Campo label="Descrição">
           <textarea className="input min-h-[64px] resize-y" value={descricao} onChange={(e) => setDescricao(e.target.value)} />
-        </div>
+        </Campo>
         <div className="grid grid-cols-3 gap-4">
-          <div>
-            <label className="label">Status</label>
+          <Campo label="Status">
             <select className="input" value={status} onChange={(e) => setStatus(e.target.value as StatusProjeto)}>
               {STATUS_PROJETO.map((s) => (
                 <option key={s.id} value={s.id}>
@@ -88,15 +84,13 @@ function ProjetoForm({ projeto, onClose }: { projeto?: Projeto | null; onClose: 
                 </option>
               ))}
             </select>
-          </div>
-          <div>
-            <label className="label">Início</label>
+          </Campo>
+          <Campo label="Início">
             <input type="date" className="input" value={inicio} onChange={(e) => setInicio(e.target.value)} />
-          </div>
-          <div>
-            <label className="label">Previsão de fim</label>
+          </Campo>
+          <Campo label="Previsão de fim">
             <input type="date" className="input" value={fim} onChange={(e) => setFim(e.target.value)} />
-          </div>
+          </Campo>
         </div>
       </div>
     </Modal>
@@ -150,7 +144,7 @@ export default function Projetos() {
                   <div className="flex items-center gap-1">
                     <Badge className={st.badge}>{st.label}</Badge>
                     <button
-                      className="btn-ghost h-8 w-8 !p-0"
+                      className="btn-ghost h-9 w-9 !p-0"
                       onClick={() => setForm({ open: true, projeto: p })}
                       aria-label="Editar"
                     >

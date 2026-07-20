@@ -1,5 +1,5 @@
 // Small presentational building blocks reused across pages.
-import type { ReactNode } from 'react'
+import { useEffect, useId, useRef, type ReactNode } from 'react'
 import type { Membro } from '../types'
 import { IconClose } from './icons'
 
@@ -33,6 +33,27 @@ export function Badge({ children, className = '' }: { children: ReactNode; class
   return <span className={`badge ${className}`}>{children}</span>
 }
 
+/**
+ * Form field: wraps its control in a <label> so screen readers announce the
+ * name without needing matching htmlFor/id pairs on every input.
+ */
+export function Campo({
+  label,
+  children,
+  className = '',
+}: {
+  label: ReactNode
+  children: ReactNode
+  className?: string
+}) {
+  return (
+    <label className={`block ${className}`}>
+      <span className="label">{label}</span>
+      {children}
+    </label>
+  )
+}
+
 export function EmptyState({
   titulo,
   descricao,
@@ -62,18 +83,42 @@ export function Modal({
   children: ReactNode
   footer?: ReactNode
 }) {
+  const tituloId = useId()
+  const dialogRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    // Close on Escape and move focus into the dialog when it opens.
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose()
+    }
+    document.addEventListener('keydown', onKey)
+    dialogRef.current?.focus()
+    return () => document.removeEventListener('keydown', onKey)
+  }, [onClose])
+
   return (
     <div
       className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-slate-900/40 p-4 sm:items-center"
       onClick={onClose}
     >
       <div
-        className="card w-full max-w-lg"
+        ref={dialogRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby={tituloId}
+        tabIndex={-1}
+        className="card w-full max-w-lg outline-none"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center justify-between border-b border-slate-200 px-5 py-4">
-          <h3 className="text-base font-semibold text-slate-800">{titulo}</h3>
-          <button className="btn-ghost -mr-2 h-8 w-8 !p-0" onClick={onClose} aria-label="Fechar">
+          <h3 id={tituloId} className="text-base font-semibold text-slate-800">
+            {titulo}
+          </h3>
+          <button
+            className="btn-ghost -mr-1.5 h-9 w-9 !p-0"
+            onClick={onClose}
+            aria-label="Fechar"
+          >
             <IconClose />
           </button>
         </div>

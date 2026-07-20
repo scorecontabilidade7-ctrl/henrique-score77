@@ -29,7 +29,10 @@ export default function Configuracoes() {
         dados.membros?.forEach(({ id: _id, ...m }) => store.criarMembro(m))
         dados.clientes?.forEach(({ id: _id, ...c }) => store.criarCliente(c))
         dados.projetos?.forEach(({ id: _id, ...p }) => store.criarProjeto(p))
-        dados.tarefas?.forEach(({ id: _id, criadaEm: _c, ...t }) => store.criarTarefa(t))
+        // criarTarefa insere no topo; percorre ao contrário para manter a ordem original.
+        ;[...(dados.tarefas ?? [])]
+          .reverse()
+          .forEach(({ id: _id, criadaEm: _c, ...t }) => store.criarTarefa(t))
         alert('Backup importado com sucesso.')
       } catch {
         alert('Não foi possível ler o arquivo. Verifique se é um backup válido.')

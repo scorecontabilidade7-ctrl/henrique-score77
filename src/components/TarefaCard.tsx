@@ -28,7 +28,19 @@ export default function TarefaCard({ tarefa, onClick, draggable, onDragStart }: 
       draggable={draggable}
       onDragStart={onDragStart}
       onClick={onClick}
-      className={`card cursor-pointer p-3 transition-shadow hover:shadow-md ${
+      onKeyDown={
+        onClick
+          ? (e) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault()
+                onClick()
+              }
+            }
+          : undefined
+      }
+      role={onClick ? 'button' : undefined}
+      tabIndex={onClick ? 0 : undefined}
+      className={`card cursor-pointer p-3 transition-shadow hover:shadow-md focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-400 ${
         draggable ? 'active:cursor-grabbing' : ''
       }`}
     >

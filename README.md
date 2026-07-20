@@ -46,6 +46,14 @@ A camada de dados fica isolada em `src/data/store.tsx`. Para migrar o time para 
 **servidor compartilhado** (todos vendo os mesmos dados em tempo real), basta trocar a
 implementação desse arquivo por chamadas a uma API — o resto do app não muda.
 
+## Acessibilidade e limitações conhecidas
+
+- Modais com `role="dialog"`, fecham com **Esc** e movem o foco ao abrir.
+- Campos de formulário com rótulo associado; cartões de tarefa navegáveis por teclado.
+- **Arrastar-e-soltar do Kanban usa a API nativa do navegador, que não funciona em
+  telas de toque (celular/tablet).** Nesses aparelhos, mude o status abrindo a tarefa
+  e escolhendo o novo status no seletor. Suporte a toque no quadro é um próximo passo.
+
 ## Stack
 
 - React + TypeScript
