@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useStore } from '../data/store'
 import type { Cliente, RegimeTributario } from '../types'
 import { REGIMES, regimeLabel } from '../lib/labels'
+import { formatarBRL } from '../lib/dates'
 import { Avatar, Badge, Campo, EmptyState, Modal } from '../components/ui'
 import { IconEditar, IconPlus } from '../components/icons'
 
@@ -12,10 +13,22 @@ function ClienteForm({ cliente, onClose }: { cliente?: Cliente | null; onClose: 
   const [regime, setRegime] = useState<RegimeTributario>(cliente?.regime ?? 'simples_nacional')
   const [responsavelId, setResponsavelId] = useState(cliente?.responsavelId ?? '')
   const [ativo, setAtivo] = useState(cliente?.ativo ?? true)
+  const [valorMensal, setValorMensal] = useState(
+    cliente?.valorMensal ? String(cliente.valorMensal) : '',
+  )
+  const [segmento, setSegmento] = useState(cliente?.segmento ?? '')
 
   function salvar() {
     if (!nome.trim()) return
-    const payload = { nome: nome.trim(), cnpj: cnpj.trim(), regime, responsavelId: responsavelId || null, ativo }
+    const payload = {
+      nome: nome.trim(),
+      cnpj: cnpj.trim(),
+      regime,
+      responsavelId: responsavelId || null,
+      ativo,
+      valorMensal: Number(valorMensal) || 0,
+      segmento: segmento.trim(),
+    }
     if (cliente) atualizarCliente(cliente.id, payload)
     else criarCliente(payload)
     onClose()
@@ -85,6 +98,27 @@ function ClienteForm({ cliente, onClose }: { cliente?: Cliente | null; onClose: 
             </select>
           </Campo>
         </div>
+        <div className="grid grid-cols-2 gap-4">
+          <Campo label="Valor mensal (R$)">
+            <input
+              type="number"
+              min="0"
+              step="50"
+              className="input"
+              value={valorMensal}
+              onChange={(e) => setValorMensal(e.target.value)}
+              placeholder="Ex.: 1500"
+            />
+          </Campo>
+          <Campo label="Segmento / Nicho">
+            <input
+              className="input"
+              value={segmento}
+              onChange={(e) => setSegmento(e.target.value)}
+              placeholder="Ex.: Saúde e Bem Estar"
+            />
+          </Campo>
+        </div>
       </div>
     </Modal>
   )
@@ -128,8 +162,9 @@ export default function Clientes() {
               <thead>
                 <tr className="border-b border-slate-200 text-left text-xs uppercase tracking-wide text-slate-400">
                   <th className="px-5 py-3 font-medium">Cliente</th>
-                  <th className="px-5 py-3 font-medium">Regime</th>
+                  <th className="px-5 py-3 font-medium">Segmento</th>
                   <th className="px-5 py-3 font-medium">Responsável</th>
+                  <th className="px-5 py-3 font-medium">Valor mensal</th>
                   <th className="px-5 py-3 font-medium">Tarefas abertas</th>
                   <th className="px-5 py-3 font-medium">Situação</th>
                   <th className="px-5 py-3"></th>
@@ -144,7 +179,10 @@ export default function Clientes() {
                         <p className="font-medium text-slate-800">{c.nome}</p>
                         <p className="text-xs text-slate-400">{c.cnpj || '—'}</p>
                       </td>
-                      <td className="px-5 py-3 text-slate-600">{regimeLabel(c.regime)}</td>
+                      <td className="px-5 py-3 text-slate-600">
+                        {c.segmento || '—'}
+                        <span className="block text-xs text-slate-400">{regimeLabel(c.regime)}</span>
+                      </td>
                       <td className="px-5 py-3">
                         {resp ? (
                           <span className="flex items-center gap-2">
@@ -154,6 +192,11 @@ export default function Clientes() {
                         ) : (
                           <span className="text-slate-400">—</span>
                         )}
+                      </td>
+                      <td className="px-5 py-3">
+                        <span className="font-medium text-slate-700">
+                          {c.valorMensal ? formatarBRL(c.valorMensal) : '—'}
+                        </span>
                       </td>
                       <td className="px-5 py-3">
                         <span className="font-medium text-slate-700">{abertasDoCliente(c.id)}</span>

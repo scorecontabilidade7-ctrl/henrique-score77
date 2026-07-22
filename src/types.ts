@@ -35,6 +35,10 @@ export interface Cliente {
   regime: RegimeTributario
   responsavelId: string | null
   ativo: boolean
+  /** Monthly consulting fee (R$) — the financial return this client brings. */
+  valorMensal: number
+  /** Market niche / segment, e.g. "Saúde e Bem Estar". */
+  segmento: string
 }
 
 export interface Projeto {

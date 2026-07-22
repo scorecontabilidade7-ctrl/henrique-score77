@@ -96,6 +96,16 @@ export function nomeDiaCurto(iso: string): string {
   return DIAS_CURTOS[parseData(iso).getDay()]
 }
 
+const BRL = new Intl.NumberFormat('pt-BR', {
+  style: 'currency',
+  currency: 'BRL',
+  maximumFractionDigits: 0,
+})
+/** Format a number as Brazilian Reais, e.g. 1500 -> "R$ 1.500". */
+export function formatarBRL(valor: number): string {
+  return BRL.format(valor || 0)
+}
+
 const MESES = [
   'janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho',
   'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro',

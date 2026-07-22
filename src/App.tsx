@@ -6,6 +6,7 @@ import Projetos from './pages/Projetos'
 import ProjetoDetalhe from './pages/ProjetoDetalhe'
 import Agenda from './pages/Agenda'
 import Horas from './pages/Horas'
+import Consultores from './pages/Consultores'
 import Clientes from './pages/Clientes'
 import Equipe from './pages/Equipe'
 import Configuracoes from './pages/Configuracoes'
@@ -20,6 +21,7 @@ export default function App() {
         <Route path="projetos/:id" element={<ProjetoDetalhe />} />
         <Route path="agenda" element={<Agenda />} />
         <Route path="horas" element={<Horas />} />
+        <Route path="consultores" element={<Consultores />} />
         <Route path="clientes" element={<Clientes />} />
         <Route path="equipe" element={<Equipe />} />
         <Route path="configuracoes" element={<Configuracoes />} />

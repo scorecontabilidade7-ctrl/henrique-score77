@@ -1,4 +1,4 @@
-import type { Apontamento, Membro, Tarefa } from '../types'
+import type { Apontamento, Cliente, Membro, Tarefa } from '../types'
 import { estaAtrasada, venceEstaSemana } from './dates'
 import { prioridade } from './labels'
 
@@ -81,6 +81,64 @@ export interface HorasMembro {
   capacidade: number
   /** apontadas / capacidade, capped for the bar width. */
   percentual: number
+}
+
+// ---------------------------------------------------------------------------
+// Financial return per consultant
+// ---------------------------------------------------------------------------
+
+export interface ConsultorResumo {
+  membro: Membro
+  /** Active clients where this member is the lead (responsável). */
+  carteira: Cliente[]
+  /** Monthly recurring revenue from that carteira. */
+  mrr: number
+  ticketMedio: number
+  /** Share of the office's total MRR (0..1). */
+  percentualReceita: number
+  abertas: number
+  atrasadas: number
+  horasApontadas: number
+  capacidade: number
+}
+
+/**
+ * Per-consultant summary: their client portfolio, financial return (MRR),
+ * workload and logged hours. Revenue is attributed to the client's lead
+ * consultant (responsável), mirroring the source spreadsheet.
+ */
+export function resumoPorConsultor(
+  membros: Membro[],
+  clientes: Cliente[],
+  tarefas: Tarefa[],
+  apontamentos: Apontamento[],
+): ConsultorResumo[] {
+  const mrrTotal = clientes
+    .filter((c) => c.ativo)
+    .reduce((s, c) => s + (c.valorMensal || 0), 0)
+
+  return membros
+    .map((membro) => {
+      const carteira = clientes.filter((c) => c.ativo && c.responsavelId === membro.id)
+      const mrr = carteira.reduce((s, c) => s + (c.valorMensal || 0), 0)
+      const abertas = tarefas.filter(
+        (t) => t.responsaveisIds.includes(membro.id) && t.status !== 'concluido',
+      )
+      return {
+        membro,
+        carteira,
+        mrr,
+        ticketMedio: carteira.length ? Math.round(mrr / carteira.length) : 0,
+        percentualReceita: mrrTotal > 0 ? mrr / mrrTotal : 0,
+        abertas: abertas.length,
+        atrasadas: abertas.filter((t) => estaAtrasada(t.prazo)).length,
+        horasApontadas: apontamentos
+          .filter((a) => a.membroId === membro.id)
+          .reduce((s, a) => s + a.horas, 0),
+        capacidade: membro.cargaHorariaSemanal || 0,
+      }
+    })
+    .sort((a, b) => b.mrr - a.mrr)
 }
 
 /**
