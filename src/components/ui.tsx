@@ -110,11 +110,13 @@ export function Modal({
   onClose,
   children,
   footer,
+  size = 'lg',
 }: {
   titulo: string
   onClose: () => void
   children: ReactNode
   footer?: ReactNode
+  size?: 'lg' | 'xl'
 }) {
   const tituloId = useId()
   const dialogRef = useRef<HTMLDivElement>(null)
@@ -140,7 +142,7 @@ export function Modal({
         aria-modal="true"
         aria-labelledby={tituloId}
         tabIndex={-1}
-        className="card w-full max-w-lg outline-none"
+        className={`card w-full outline-none ${size === 'xl' ? 'max-w-2xl' : 'max-w-lg'}`}
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center justify-between border-b border-slate-200 px-5 py-4">

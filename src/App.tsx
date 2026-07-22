@@ -5,6 +5,7 @@ import Tarefas from './pages/Tarefas'
 import Projetos from './pages/Projetos'
 import ProjetoDetalhe from './pages/ProjetoDetalhe'
 import Agenda from './pages/Agenda'
+import Semana from './pages/Semana'
 import Horas from './pages/Horas'
 import Consultores from './pages/Consultores'
 import Clientes from './pages/Clientes'
@@ -20,6 +21,7 @@ export default function App() {
         <Route path="projetos" element={<Projetos />} />
         <Route path="projetos/:id" element={<ProjetoDetalhe />} />
         <Route path="agenda" element={<Agenda />} />
+        <Route path="semana" element={<Semana />} />
         <Route path="horas" element={<Horas />} />
         <Route path="consultores" element={<Consultores />} />
         <Route path="clientes" element={<Clientes />} />

@@ -86,8 +86,9 @@ export default function TarefaForm({
       horaInicio: data ? horaInicio || null : null,
       horaFim: data ? horaFim || null : null,
     }
+    // Editing preserves existing checklists/comments; new tasks start empty.
     if (tarefa) atualizarTarefa(tarefa.id, payload)
-    else criarTarefa(payload)
+    else criarTarefa({ ...payload, checklists: [], comentarios: [] })
     onClose()
   }
 

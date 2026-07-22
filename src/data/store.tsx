@@ -18,6 +18,38 @@ import type {
 } from '../types'
 import { dadosIniciais } from './seed'
 
+// Coerce possibly-incomplete records (older data / imports) into the current
+// shape so the UI can rely on arrays always being present.
+function normTarefa(t: Partial<Tarefa>): Tarefa {
+  return {
+    ...(t as Tarefa),
+    responsaveisIds: t.responsaveisIds ?? [],
+    checklists: t.checklists ?? [],
+    comentarios: t.comentarios ?? [],
+    estimativaHoras: t.estimativaHoras ?? 0,
+  }
+}
+
+function normCliente(c: Partial<Cliente>): Cliente {
+  return {
+    ...(c as Cliente),
+    assistentesIds: c.assistentesIds ?? [],
+    valorMensal: c.valorMensal ?? 0,
+    segmento: c.segmento ?? '',
+  }
+}
+
+function normalizar(d: Partial<DadosApp>): DadosApp {
+  return {
+    membros: d.membros ?? [],
+    clientes: (d.clientes ?? []).map(normCliente),
+    projetos: d.projetos ?? [],
+    etapas: d.etapas ?? [],
+    tarefas: (d.tarefas ?? []).map(normTarefa),
+    apontamentos: d.apontamentos ?? [],
+  }
+}
+
 // ---------------------------------------------------------------------------
 // Persistence layer.
 //
@@ -27,21 +59,13 @@ import { dadosIniciais } from './seed'
 // API calls — the rest of the app talks to `useStore()` and never changes.
 // ---------------------------------------------------------------------------
 
-const CHAVE = 'gestor-escritorio:v2'
+const CHAVE = 'gestor-escritorio:v3'
 
 function carregar(): DadosApp {
   try {
     const bruto = localStorage.getItem(CHAVE)
     if (!bruto) return dadosIniciais
-    const dados = JSON.parse(bruto) as Partial<DadosApp>
-    return {
-      membros: dados.membros ?? [],
-      clientes: dados.clientes ?? [],
-      projetos: dados.projetos ?? [],
-      etapas: dados.etapas ?? [],
-      tarefas: dados.tarefas ?? [],
-      apontamentos: dados.apontamentos ?? [],
-    }
+    return normalizar(JSON.parse(bruto) as Partial<DadosApp>)
   } catch {
     return dadosIniciais
   }
@@ -244,14 +268,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
 
   // Replace the whole dataset at once, preserving ids (used by backup import).
   const substituirTudo = useCallback((novos: DadosApp) => {
-    setDados({
-      membros: novos.membros ?? [],
-      clientes: novos.clientes ?? [],
-      projetos: novos.projetos ?? [],
-      etapas: novos.etapas ?? [],
-      tarefas: novos.tarefas ?? [],
-      apontamentos: novos.apontamentos ?? [],
-    })
+    setDados(normalizar(novos))
   }, [])
 
   const resetar = useCallback(() => setDados(dadosIniciais), [])

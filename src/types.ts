@@ -64,6 +64,26 @@ export interface Etapa {
   cor: string
 }
 
+export interface ChecklistItem {
+  id: string
+  texto: string
+  feito: boolean
+}
+
+/** A named checklist on a card, e.g. "Muito Urgente" with several items. */
+export interface Checklist {
+  id: string
+  titulo: string
+  itens: ChecklistItem[]
+}
+
+export interface Comentario {
+  id: string
+  texto: string
+  data: string // ISO datetime
+  autorId: string | null
+}
+
 export interface Tarefa {
   id: string
   titulo: string
@@ -83,6 +103,10 @@ export interface Tarefa {
   data: string | null // ISO date (yyyy-mm-dd)
   horaInicio: string | null // "HH:mm"
   horaFim: string | null // "HH:mm"
+  /** Trello-style checklists (groups of checkable items). */
+  checklists: Checklist[]
+  /** Comment/activity feed on the card. */
+  comentarios: Comentario[]
   criadaEm: string // ISO datetime
 }
 

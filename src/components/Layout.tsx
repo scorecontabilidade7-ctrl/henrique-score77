@@ -1,6 +1,7 @@
 import { NavLink, Outlet } from 'react-router-dom'
 import {
   IconCalendario,
+  IconChecklist,
   IconClientes,
   IconConfig,
   IconDashboard,
@@ -23,6 +24,7 @@ const itens: Item[] = [
   { to: '/tarefas', label: 'Tarefas', Icon: IconKanban },
   { to: '/projetos', label: 'Projetos', Icon: IconProjetos },
   { to: '/agenda', label: 'Agenda', Icon: IconCalendario },
+  { to: '/semana', label: 'Semana', Icon: IconChecklist },
   { to: '/horas', label: 'Horas', Icon: IconRelogio },
   { to: '/consultores', label: 'Consultores', Icon: IconGrafico },
   { to: '/clientes', label: 'Clientes', Icon: IconClientes },

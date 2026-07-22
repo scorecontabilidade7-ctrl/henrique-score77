@@ -13,6 +13,19 @@ export interface CargaMembro {
 }
 
 const ABERTA = (t: Tarefa) => t.status !== 'concluido'
+
+/** Aggregate checklist progress across all checklists of a task. */
+export function progressoChecklist(t: Tarefa): { feitos: number; total: number; pct: number } {
+  let feitos = 0
+  let total = 0
+  for (const c of t.checklists) {
+    for (const it of c.itens) {
+      total += 1
+      if (it.feito) feitos += 1
+    }
+  }
+  return { feitos, total, pct: total ? Math.round((feitos / total) * 100) : 0 }
+}
 const responsavelPor = (t: Tarefa, membroId: string) =>
   t.responsaveisIds.includes(membroId)
 
