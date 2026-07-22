@@ -1,11 +1,13 @@
 import { NavLink, Outlet } from 'react-router-dom'
 import {
+  IconCalendario,
   IconClientes,
   IconConfig,
   IconDashboard,
   IconEquipe,
   IconKanban,
   IconProjetos,
+  IconRelogio,
 } from './icons'
 import type { ComponentType, SVGProps } from 'react'
 
@@ -19,6 +21,8 @@ const itens: Item[] = [
   { to: '/', label: 'Painel', Icon: IconDashboard },
   { to: '/tarefas', label: 'Tarefas', Icon: IconKanban },
   { to: '/projetos', label: 'Projetos', Icon: IconProjetos },
+  { to: '/agenda', label: 'Agenda', Icon: IconCalendario },
+  { to: '/horas', label: 'Horas', Icon: IconRelogio },
   { to: '/clientes', label: 'Clientes', Icon: IconClientes },
   { to: '/equipe', label: 'Equipe', Icon: IconEquipe },
   { to: '/configuracoes', label: 'Configurações', Icon: IconConfig },

@@ -7,7 +7,15 @@ import {
   useState,
   type ReactNode,
 } from 'react'
-import type { Cliente, DadosApp, Membro, Projeto, Tarefa } from '../types'
+import type {
+  Apontamento,
+  Cliente,
+  DadosApp,
+  Etapa,
+  Membro,
+  Projeto,
+  Tarefa,
+} from '../types'
 import { dadosIniciais } from './seed'
 
 // ---------------------------------------------------------------------------
@@ -19,7 +27,7 @@ import { dadosIniciais } from './seed'
 // API calls — the rest of the app talks to `useStore()` and never changes.
 // ---------------------------------------------------------------------------
 
-const CHAVE = 'gestor-escritorio:v1'
+const CHAVE = 'gestor-escritorio:v2'
 
 function carregar(): DadosApp {
   try {
@@ -30,7 +38,9 @@ function carregar(): DadosApp {
       membros: dados.membros ?? [],
       clientes: dados.clientes ?? [],
       projetos: dados.projetos ?? [],
+      etapas: dados.etapas ?? [],
       tarefas: dados.tarefas ?? [],
+      apontamentos: dados.apontamentos ?? [],
     }
   } catch {
     return dadosIniciais
@@ -69,12 +79,29 @@ interface StoreContextValue extends DadosApp {
   criarProjeto: (p: Omit<Projeto, 'id'>) => void
   atualizarProjeto: (id: string, patch: Partial<Projeto>) => void
   removerProjeto: (id: string) => void
+  // Etapas
+  criarEtapa: (e: Omit<Etapa, 'id'>) => void
+  atualizarEtapa: (id: string, patch: Partial<Etapa>) => void
+  removerEtapa: (id: string) => void
+  // Apontamentos
+  criarApontamento: (a: Omit<Apontamento, 'id'>) => void
+  removerApontamento: (id: string) => void
   // Utilidades
+  substituirTudo: (dados: DadosApp) => void
   resetar: () => void
   limpar: () => void
 }
 
 const StoreContext = createContext<StoreContextValue | null>(null)
+
+const vazio: DadosApp = {
+  membros: [],
+  clientes: [],
+  projetos: [],
+  etapas: [],
+  tarefas: [],
+  apontamentos: [],
+}
 
 export function StoreProvider({ children }: { children: ReactNode }) {
   const [dados, setDados] = useState<DadosApp>(carregar)
@@ -101,7 +128,11 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   }, [])
 
   const removerTarefa = useCallback((id: string) => {
-    setDados((d) => ({ ...d, tarefas: d.tarefas.filter((t) => t.id !== id) }))
+    setDados((d) => ({
+      ...d,
+      tarefas: d.tarefas.filter((t) => t.id !== id),
+      apontamentos: d.apontamentos.filter((a) => a.tarefaId !== id),
+    }))
   }, [])
 
   const criarCliente = useCallback((c: Omit<Cliente, 'id'>) => {
@@ -119,7 +150,6 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     setDados((d) => ({
       ...d,
       clientes: d.clientes.filter((c) => c.id !== id),
-      // Detach tasks/projects from the removed client instead of deleting them.
       tarefas: d.tarefas.map((t) =>
         t.clienteId === id ? { ...t, clienteId: null } : t,
       ),
@@ -142,9 +172,11 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     setDados((d) => ({
       ...d,
       membros: d.membros.filter((m) => m.id !== id),
-      tarefas: d.tarefas.map((t) =>
-        t.responsavelId === id ? { ...t, responsavelId: null } : t,
-      ),
+      apontamentos: d.apontamentos.filter((a) => a.membroId !== id),
+      tarefas: d.tarefas.map((t) => ({
+        ...t,
+        responsaveisIds: t.responsaveisIds.filter((r) => r !== id),
+      })),
       clientes: d.clientes.map((c) =>
         c.responsavelId === id ? { ...c, responsavelId: null } : c,
       ),
@@ -166,17 +198,62 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     setDados((d) => ({
       ...d,
       projetos: d.projetos.filter((p) => p.id !== id),
+      etapas: d.etapas.filter((e) => e.projetoId !== id),
       tarefas: d.tarefas.map((t) =>
-        t.projetoId === id ? { ...t, projetoId: null } : t,
+        t.projetoId === id ? { ...t, projetoId: null, etapaId: null } : t,
       ),
     }))
   }, [])
 
+  const criarEtapa = useCallback((e: Omit<Etapa, 'id'>) => {
+    setDados((d) => ({ ...d, etapas: [...d.etapas, { ...e, id: novoId() }] }))
+  }, [])
+
+  const atualizarEtapa = useCallback((id: string, patch: Partial<Etapa>) => {
+    setDados((d) => ({
+      ...d,
+      etapas: d.etapas.map((e) => (e.id === id ? { ...e, ...patch } : e)),
+    }))
+  }, [])
+
+  const removerEtapa = useCallback((id: string) => {
+    setDados((d) => ({
+      ...d,
+      etapas: d.etapas.filter((e) => e.id !== id),
+      tarefas: d.tarefas.map((t) =>
+        t.etapaId === id ? { ...t, etapaId: null } : t,
+      ),
+    }))
+  }, [])
+
+  const criarApontamento = useCallback((a: Omit<Apontamento, 'id'>) => {
+    setDados((d) => ({
+      ...d,
+      apontamentos: [{ ...a, id: novoId() }, ...d.apontamentos],
+    }))
+  }, [])
+
+  const removerApontamento = useCallback((id: string) => {
+    setDados((d) => ({
+      ...d,
+      apontamentos: d.apontamentos.filter((a) => a.id !== id),
+    }))
+  }, [])
+
+  // Replace the whole dataset at once, preserving ids (used by backup import).
+  const substituirTudo = useCallback((novos: DadosApp) => {
+    setDados({
+      membros: novos.membros ?? [],
+      clientes: novos.clientes ?? [],
+      projetos: novos.projetos ?? [],
+      etapas: novos.etapas ?? [],
+      tarefas: novos.tarefas ?? [],
+      apontamentos: novos.apontamentos ?? [],
+    })
+  }, [])
+
   const resetar = useCallback(() => setDados(dadosIniciais), [])
-  const limpar = useCallback(
-    () => setDados({ membros: [], clientes: [], projetos: [], tarefas: [] }),
-    [],
-  )
+  const limpar = useCallback(() => setDados(vazio), [])
 
   const value = useMemo<StoreContextValue>(
     () => ({
@@ -193,6 +270,12 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       criarProjeto,
       atualizarProjeto,
       removerProjeto,
+      criarEtapa,
+      atualizarEtapa,
+      removerEtapa,
+      criarApontamento,
+      removerApontamento,
+      substituirTudo,
       resetar,
       limpar,
     }),
@@ -210,6 +293,12 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       criarProjeto,
       atualizarProjeto,
       removerProjeto,
+      criarEtapa,
+      atualizarEtapa,
+      removerEtapa,
+      criarApontamento,
+      removerApontamento,
+      substituirTudo,
       resetar,
       limpar,
     ],

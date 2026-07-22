@@ -2,44 +2,84 @@ import type { DadosApp } from '../types'
 import { isoRelativo } from '../lib/dates'
 
 // Sample data so the office sees a working product on first open.
-// It can be wiped from Configurações; real data replaces it as it's entered.
+// Inspired by a real consulting schedule: a project split into stages (Etapas),
+// tasks per stage with multiple people, scheduled meetings and logged hours.
+
+const agora = () => new Date().toISOString()
 
 export const dadosIniciais: DadosApp = {
   membros: [
-    { id: 'm1', nome: 'Henrique Souza', cargo: 'Sócio-diretor', email: 'henrique@escritorio.com.br', cor: 'bg-indigo-500' },
-    { id: 'm2', nome: 'Amanda Ribeiro', cargo: 'Contadora sênior', email: 'amanda@escritorio.com.br', cor: 'bg-rose-500' },
-    { id: 'm3', nome: 'Bruno Carvalho', cargo: 'Analista fiscal', email: 'bruno@escritorio.com.br', cor: 'bg-emerald-500' },
-    { id: 'm4', nome: 'Carla Nunes', cargo: 'Analista de folha', email: 'carla@escritorio.com.br', cor: 'bg-amber-500' },
-    { id: 'm5', nome: 'Diego Martins', cargo: 'Consultor tributário', email: 'diego@escritorio.com.br', cor: 'bg-sky-500' },
+    { id: 'm1', nome: 'Henrique Figueira', cargo: 'Consultor líder', email: 'henrique@escritorio.com.br', cor: 'bg-indigo-500', cargaHorariaSemanal: 44 },
+    { id: 'm2', nome: 'Amanda Ribeiro', cargo: 'Consultora sênior', email: 'amanda@escritorio.com.br', cor: 'bg-rose-500', cargaHorariaSemanal: 40 },
+    { id: 'm3', nome: 'Bruno Carvalho', cargo: 'Analista fiscal', email: 'bruno@escritorio.com.br', cor: 'bg-emerald-500', cargaHorariaSemanal: 40 },
+    { id: 'm4', nome: 'Carla Nunes', cargo: 'Analista de folha', email: 'carla@escritorio.com.br', cor: 'bg-amber-500', cargaHorariaSemanal: 30 },
+    { id: 'm5', nome: 'Diego Martins', cargo: 'Consultor tributário', email: 'diego@escritorio.com.br', cor: 'bg-sky-500', cargaHorariaSemanal: 40 },
   ],
   clientes: [
     { id: 'c1', nome: 'Padaria Pão Quente Ltda', cnpj: '12.345.678/0001-90', regime: 'simples_nacional', responsavelId: 'm3', ativo: true },
     { id: 'c2', nome: 'TechNova Sistemas', cnpj: '23.456.789/0001-01', regime: 'lucro_presumido', responsavelId: 'm2', ativo: true },
-    { id: 'c3', nome: 'Construtora Alicerce S.A.', cnpj: '34.567.890/0001-12', regime: 'lucro_real', responsavelId: 'm2', ativo: true },
+    { id: 'c3', nome: 'Construtora Alicerce S.A.', cnpj: '34.567.890/0001-12', regime: 'lucro_real', responsavelId: 'm1', ativo: true },
     { id: 'c4', nome: 'Studio Bella Estética', cnpj: '45.678.901/0001-23', regime: 'mei', responsavelId: 'm4', ativo: true },
-    { id: 'c5', nome: 'Instituto Semear', cnpj: '56.789.012/0001-34', regime: 'terceiro_setor', responsavelId: 'm3', ativo: true },
     { id: 'c6', nome: 'Mercado São João', cnpj: '67.890.123/0001-45', regime: 'simples_nacional', responsavelId: 'm4', ativo: true },
-    { id: 'c7', nome: 'Advocacia Lima & Costa', cnpj: '78.901.234/0001-56', regime: 'lucro_presumido', responsavelId: 'm3', ativo: false },
   ],
   projetos: [
-    { id: 'p1', nome: 'Planejamento tributário 2026', clienteId: 'c3', descricao: 'Estudo de reenquadramento e economia fiscal para a construtora.', status: 'em_andamento', inicio: isoRelativo(-20), fim: isoRelativo(40) },
-    { id: 'p2', nome: 'Implantação de sistema contábil', clienteId: 'c2', descricao: 'Migração de dados e treinamento da equipe interna da TechNova.', status: 'planejado', inicio: isoRelativo(5), fim: isoRelativo(60) },
-    { id: 'p3', nome: 'Abertura de filial', clienteId: 'c6', descricao: 'Constituição de nova unidade e regularização de licenças.', status: 'em_andamento', inicio: isoRelativo(-10), fim: isoRelativo(20) },
+    { id: 'p1', nome: 'Consultoria Financeira', clienteId: 'c3', descricao: 'Implantação de gestão financeira: plano de contas, fluxo de caixa, contas a pagar/receber e planejamento orçamentário.', status: 'em_andamento', inicio: isoRelativo(-30), fim: isoRelativo(120) },
+    { id: 'p2', nome: 'Implantação de sistema contábil', clienteId: 'c2', descricao: 'Migração de dados e treinamento da equipe interna da TechNova.', status: 'em_andamento', inicio: isoRelativo(-10), fim: isoRelativo(50) },
+    { id: 'p3', nome: 'Abertura de filial', clienteId: 'c6', descricao: 'Constituição de nova unidade e regularização de licenças.', status: 'planejado', inicio: isoRelativo(5), fim: isoRelativo(40) },
+  ],
+  etapas: [
+    // Projeto 1 — fluxo de consultoria financeira (baseado no cronograma)
+    { id: 'e1', projetoId: 'p1', nome: 'Análise Inicial', ordem: 1, cor: 'bg-indigo-500' },
+    { id: 'e2', projetoId: 'p1', nome: 'Organização', ordem: 2, cor: 'bg-emerald-500' },
+    { id: 'e3', projetoId: 'p1', nome: 'Controle', ordem: 3, cor: 'bg-amber-500' },
+    { id: 'e4', projetoId: 'p1', nome: 'Análise', ordem: 4, cor: 'bg-rose-500' },
+    { id: 'e5', projetoId: 'p1', nome: 'Planejamento', ordem: 5, cor: 'bg-sky-500' },
+    // Projeto 2
+    { id: 'e6', projetoId: 'p2', nome: 'Levantamento', ordem: 1, cor: 'bg-indigo-500' },
+    { id: 'e7', projetoId: 'p2', nome: 'Migração', ordem: 2, cor: 'bg-emerald-500' },
+    { id: 'e8', projetoId: 'p2', nome: 'Treinamento', ordem: 3, cor: 'bg-amber-500' },
+    // Projeto 3
+    { id: 'e9', projetoId: 'p3', nome: 'Documentação', ordem: 1, cor: 'bg-indigo-500' },
+    { id: 'e10', projetoId: 'p3', nome: 'Regularização', ordem: 2, cor: 'bg-emerald-500' },
   ],
   tarefas: [
-    { id: 't1', titulo: 'Apurar DAS - Simples Nacional', descricao: 'Calcular e emitir a guia do Simples referente ao mês anterior.', clienteId: 'c1', responsavelId: 'm3', projetoId: null, tipo: 'contabil', prioridade: 'alta', status: 'a_fazer', prazo: isoRelativo(2), criadaEm: new Date().toISOString() },
-    { id: 't2', titulo: 'Fechar folha de pagamento', descricao: 'Consolidar folha e enviar para aprovação do cliente.', clienteId: 'c6', responsavelId: 'm4', projetoId: null, tipo: 'contabil', prioridade: 'urgente', status: 'em_andamento', prazo: isoRelativo(1), criadaEm: new Date().toISOString() },
-    { id: 't3', titulo: 'Entregar EFD-Contribuições', descricao: 'Gerar e transmitir o SPED Contribuições.', clienteId: 'c3', responsavelId: 'm2', projetoId: null, tipo: 'contabil', prioridade: 'alta', status: 'a_fazer', prazo: isoRelativo(-1), criadaEm: new Date().toISOString() },
-    { id: 't4', titulo: 'Levantar dados para estudo tributário', descricao: 'Coletar balancetes dos últimos 12 meses.', clienteId: 'c3', responsavelId: 'm5', projetoId: 'p1', tipo: 'consultoria', prioridade: 'media', status: 'em_andamento', prazo: isoRelativo(4), criadaEm: new Date().toISOString() },
-    { id: 't5', titulo: 'Conciliação bancária', descricao: 'Conciliar extratos de junho.', clienteId: 'c2', responsavelId: 'm2', projetoId: null, tipo: 'contabil', prioridade: 'media', status: 'em_revisao', prazo: isoRelativo(3), criadaEm: new Date().toISOString() },
-    { id: 't6', titulo: 'Emitir guia INSS', descricao: 'Gerar guia da previdência social.', clienteId: 'c4', responsavelId: 'm4', projetoId: null, tipo: 'contabil', prioridade: 'alta', status: 'a_fazer', prazo: isoRelativo(0), criadaEm: new Date().toISOString() },
-    { id: 't7', titulo: 'Reunião de kickoff da implantação', descricao: 'Alinhar cronograma e responsáveis com a TechNova.', clienteId: 'c2', responsavelId: 'm5', projetoId: 'p2', tipo: 'consultoria', prioridade: 'media', status: 'a_fazer', prazo: isoRelativo(6), criadaEm: new Date().toISOString() },
-    { id: 't8', titulo: 'Preparar demonstrações contábeis', descricao: 'DRE e balanço patrimonial do trimestre.', clienteId: 'c3', responsavelId: 'm2', projetoId: null, tipo: 'contabil', prioridade: 'media', status: 'a_fazer', prazo: isoRelativo(9), criadaEm: new Date().toISOString() },
-    { id: 't9', titulo: 'Regularizar licença de funcionamento', descricao: 'Protocolar renovação junto à prefeitura.', clienteId: 'c6', responsavelId: 'm3', projetoId: 'p3', tipo: 'consultoria', prioridade: 'alta', status: 'em_andamento', prazo: isoRelativo(-2), criadaEm: new Date().toISOString() },
-    { id: 't10', titulo: 'Enviar relatório mensal', descricao: 'Relatório gerencial para o Instituto Semear.', clienteId: 'c5', responsavelId: 'm3', projetoId: null, tipo: 'avulsa', prioridade: 'baixa', status: 'concluido', prazo: isoRelativo(-3), criadaEm: new Date().toISOString() },
-    { id: 't11', titulo: 'Atualizar cadastro na Receita', descricao: 'Alteração de quadro societário.', clienteId: 'c4', responsavelId: 'm3', projetoId: null, tipo: 'avulsa', prioridade: 'media', status: 'a_fazer', prazo: isoRelativo(12), criadaEm: new Date().toISOString() },
-    { id: 't12', titulo: 'Revisar contrato de consultoria', descricao: 'Ajustar escopo do planejamento tributário.', clienteId: 'c3', responsavelId: 'm5', projetoId: 'p1', tipo: 'consultoria', prioridade: 'baixa', status: 'em_revisao', prazo: isoRelativo(7), criadaEm: new Date().toISOString() },
-    { id: 't13', titulo: 'Emitir DARF IRPJ', descricao: 'Guia de imposto de renda pessoa jurídica.', clienteId: 'c2', responsavelId: 'm2', projetoId: null, tipo: 'contabil', prioridade: 'urgente', status: 'a_fazer', prazo: isoRelativo(1), criadaEm: new Date().toISOString() },
-    { id: 't14', titulo: 'Baixar notas fiscais do mês', descricao: 'Importar XMLs de entrada e saída.', clienteId: 'c1', responsavelId: 'm3', projetoId: null, tipo: 'contabil', prioridade: 'media', status: 'concluido', prazo: isoRelativo(-5), criadaEm: new Date().toISOString() },
+    // --- Projeto 1: Consultoria Financeira ---
+    { id: 't1', titulo: 'Briefing e recolhimento de arquivos', descricao: 'Coletar documentos contábeis dos últimos 3 meses.', clienteId: 'c3', projetoId: 'p1', etapaId: 'e1', responsaveisIds: ['m1'], tipo: 'consultoria', prioridade: 'urgente', status: 'concluido', prazo: isoRelativo(-24), estimativaHoras: 8, data: null, horaInicio: null, horaFim: null, criadaEm: agora() },
+    { id: 't2', titulo: 'Diagnóstico empresarial', descricao: 'Levantar situação financeira e gargalos.', clienteId: 'c3', projetoId: 'p1', etapaId: 'e1', responsaveisIds: ['m2', 'm1'], tipo: 'consultoria', prioridade: 'alta', status: 'concluido', prazo: isoRelativo(-17), estimativaHoras: 12, data: null, horaInicio: null, horaFim: null, criadaEm: agora() },
+    { id: 't3', titulo: 'Análise SWOT e Matriz GUT', descricao: 'Priorizar problemas por Gravidade, Urgência e Tendência.', clienteId: 'c3', projetoId: 'p1', etapaId: 'e1', responsaveisIds: ['m1', 'm5'], tipo: 'consultoria', prioridade: 'alta', status: 'em_revisao', prazo: isoRelativo(-1), estimativaHoras: 10, data: null, horaInicio: null, horaFim: null, criadaEm: agora() },
+    { id: 't4', titulo: 'Criação do plano de contas', descricao: 'Estruturar o plano de contas da empresa.', clienteId: 'c3', projetoId: 'p1', etapaId: 'e2', responsaveisIds: ['m3'], tipo: 'consultoria', prioridade: 'alta', status: 'em_andamento', prazo: isoRelativo(3), estimativaHoras: 16, data: null, horaInicio: null, horaFim: null, criadaEm: agora() },
+    { id: 't5', titulo: 'Mapeamento do processo financeiro', descricao: 'Desenhar as rotinas financeiras atuais.', clienteId: 'c3', projetoId: 'p1', etapaId: 'e2', responsaveisIds: ['m2'], tipo: 'consultoria', prioridade: 'media', status: 'a_fazer', prazo: isoRelativo(6), estimativaHoras: 14, data: null, horaInicio: null, horaFim: null, criadaEm: agora() },
+    { id: 't6', titulo: 'Fluxo de caixa (desenho do processo)', descricao: 'Implantar controle diário de caixa.', clienteId: 'c3', projetoId: 'p1', etapaId: 'e3', responsaveisIds: ['m2', 'm5'], tipo: 'consultoria', prioridade: 'urgente', status: 'a_fazer', prazo: isoRelativo(9), estimativaHoras: 20, data: null, horaInicio: null, horaFim: null, criadaEm: agora() },
+    { id: 't7', titulo: 'Contas a pagar (treinamento)', descricao: 'Treinar equipe do cliente no processo de CP.', clienteId: 'c3', projetoId: 'p1', etapaId: 'e3', responsaveisIds: ['m3'], tipo: 'consultoria', prioridade: 'media', status: 'a_fazer', prazo: isoRelativo(16), estimativaHoras: 8, data: null, horaInicio: null, horaFim: null, criadaEm: agora() },
+    { id: 't8', titulo: 'DRE e DFC do trimestre', descricao: 'Montar demonstrações e curva ABC.', clienteId: 'c3', projetoId: 'p1', etapaId: 'e4', responsaveisIds: ['m1'], tipo: 'consultoria', prioridade: 'media', status: 'a_fazer', prazo: isoRelativo(25), estimativaHoras: 12, data: null, horaInicio: null, horaFim: null, criadaEm: agora() },
+    { id: 't9', titulo: 'Planejamento orçamentário 2027', descricao: 'Construir orçamento anual com o cliente.', clienteId: 'c3', projetoId: 'p1', etapaId: 'e5', responsaveisIds: ['m1', 'm2'], tipo: 'consultoria', prioridade: 'baixa', status: 'a_fazer', prazo: isoRelativo(40), estimativaHoras: 18, data: null, horaInicio: null, horaFim: null, criadaEm: agora() },
+
+    // --- Projeto 2: Implantação de sistema contábil ---
+    { id: 't10', titulo: 'Levantar volume de notas fiscais', descricao: 'Dimensionar a migração de dados.', clienteId: 'c2', projetoId: 'p2', etapaId: 'e6', responsaveisIds: ['m2'], tipo: 'consultoria', prioridade: 'media', status: 'em_andamento', prazo: isoRelativo(4), estimativaHoras: 6, data: null, horaInicio: null, horaFim: null, criadaEm: agora() },
+    { id: 't11', titulo: 'Migração de dados contábeis', descricao: 'Importar histórico para o novo sistema.', clienteId: 'c2', projetoId: 'p2', etapaId: 'e7', responsaveisIds: ['m3', 'm2'], tipo: 'consultoria', prioridade: 'alta', status: 'a_fazer', prazo: isoRelativo(20), estimativaHoras: 24, data: null, horaInicio: null, horaFim: null, criadaEm: agora() },
+
+    // --- Tarefas contábeis avulsas / recorrentes ---
+    { id: 't12', titulo: 'Apurar DAS - Simples Nacional', descricao: 'Emitir guia do Simples do mês.', clienteId: 'c1', projetoId: null, etapaId: null, responsaveisIds: ['m3'], tipo: 'contabil', prioridade: 'alta', status: 'a_fazer', prazo: isoRelativo(2), estimativaHoras: 2, data: null, horaInicio: null, horaFim: null, criadaEm: agora() },
+    { id: 't13', titulo: 'Fechar folha de pagamento', descricao: 'Consolidar folha e enviar para aprovação.', clienteId: 'c6', projetoId: null, etapaId: null, responsaveisIds: ['m4'], tipo: 'contabil', prioridade: 'urgente', status: 'em_andamento', prazo: isoRelativo(1), estimativaHoras: 4, data: null, horaInicio: null, horaFim: null, criadaEm: agora() },
+    { id: 't14', titulo: 'Emitir guia INSS', descricao: 'Gerar guia da previdência.', clienteId: 'c4', projetoId: null, etapaId: null, responsaveisIds: ['m4'], tipo: 'contabil', prioridade: 'alta', status: 'a_fazer', prazo: isoRelativo(0), estimativaHoras: 1, data: null, horaInicio: null, horaFim: null, criadaEm: agora() },
+
+    // --- Reuniões agendadas (aparecem no Calendário; algumas com vários responsáveis) ---
+    { id: 'r1', titulo: 'Alinhamento diário da consultoria', descricao: 'Daily do time de consultoria.', clienteId: 'c3', projetoId: 'p1', etapaId: 'e2', responsaveisIds: ['m1', 'm2', 'm5'], tipo: 'reuniao', prioridade: 'media', status: 'a_fazer', prazo: isoRelativo(0), estimativaHoras: 0.5, data: isoRelativo(0), horaInicio: '09:00', horaFim: '09:30', criadaEm: agora() },
+    { id: 'r2', titulo: 'Reunião de diagnóstico com o cliente', descricao: 'Apresentar SWOT e GUT à Construtora Alicerce.', clienteId: 'c3', projetoId: 'p1', etapaId: 'e1', responsaveisIds: ['m1', 'm2'], tipo: 'reuniao', prioridade: 'alta', status: 'a_fazer', prazo: isoRelativo(0), estimativaHoras: 1, data: isoRelativo(0), horaInicio: '11:00', horaFim: '12:00', criadaEm: agora() },
+    { id: 'r3', titulo: 'Treinamento de fluxo de caixa', descricao: 'Treinar equipe do cliente.', clienteId: 'c3', projetoId: 'p1', etapaId: 'e3', responsaveisIds: ['m2'], tipo: 'reuniao', prioridade: 'media', status: 'a_fazer', prazo: isoRelativo(1), estimativaHoras: 2, data: isoRelativo(1), horaInicio: '14:00', horaFim: '16:00', criadaEm: agora() },
+    { id: 'r4', titulo: 'Kickoff implantação TechNova', descricao: 'Alinhar cronograma e responsáveis.', clienteId: 'c2', projetoId: 'p2', etapaId: 'e6', responsaveisIds: ['m2', 'm3'], tipo: 'reuniao', prioridade: 'alta', status: 'a_fazer', prazo: isoRelativo(2), estimativaHoras: 1.5, data: isoRelativo(2), horaInicio: '10:00', horaFim: '11:30', criadaEm: agora() },
+    { id: 'r5', titulo: 'Revisão semanal do projeto', descricao: 'Status geral com sócios.', clienteId: 'c3', projetoId: 'p1', etapaId: null, responsaveisIds: ['m1', 'm2', 'm3', 'm5'], tipo: 'reuniao', prioridade: 'media', status: 'a_fazer', prazo: isoRelativo(3), estimativaHoras: 1, data: isoRelativo(3), horaInicio: '16:00', horaFim: '17:00', criadaEm: agora() },
+    { id: 'r6', titulo: 'Reunião com contador do cliente', descricao: 'Dúvidas do plano de contas.', clienteId: 'c3', projetoId: 'p1', etapaId: 'e2', responsaveisIds: ['m3'], tipo: 'reuniao', prioridade: 'media', status: 'a_fazer', prazo: isoRelativo(-1), estimativaHoras: 1, data: isoRelativo(-1), horaInicio: '15:00', horaFim: '16:00', criadaEm: agora() },
+  ],
+  apontamentos: [
+    // Horas já lançadas nesta semana
+    { id: 'a1', tarefaId: 't1', membroId: 'm1', data: isoRelativo(-2), horas: 8, comentario: 'Coleta de arquivos concluída.' },
+    { id: 'a2', tarefaId: 't2', membroId: 'm2', data: isoRelativo(-2), horas: 6, comentario: 'Diagnóstico inicial.' },
+    { id: 'a3', tarefaId: 't2', membroId: 'm1', data: isoRelativo(-1), horas: 4, comentario: 'Revisão do diagnóstico.' },
+    { id: 'a4', tarefaId: 't3', membroId: 'm1', data: isoRelativo(-1), horas: 5, comentario: 'Matriz GUT.' },
+    { id: 'a5', tarefaId: 't4', membroId: 'm3', data: isoRelativo(0), horas: 3, comentario: 'Estruturando plano de contas.' },
+    { id: 'a6', tarefaId: 't10', membroId: 'm2', data: isoRelativo(0), horas: 2.5, comentario: 'Levantamento de notas.' },
+    { id: 'a7', tarefaId: 't13', membroId: 'm4', data: isoRelativo(-1), horas: 3, comentario: 'Folha em andamento.' },
+    { id: 'a8', tarefaId: 'r3', membroId: 'm2', data: isoRelativo(-3), horas: 2, comentario: 'Preparação do treinamento.' },
   ],
 }

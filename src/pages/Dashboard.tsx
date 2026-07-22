@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { useStore } from '../data/store'
 import { cargaPorMembro, gargalos, resumoGeral } from '../lib/workload'
 import { prazoRelativo } from '../lib/dates'
-import { Avatar, Badge } from '../components/ui'
+import { Avatar, AvatarGroup, Badge } from '../components/ui'
 import { IconAlerta, IconCheck, IconLista, IconPlus, IconRelogio } from '../components/icons'
 import TarefaForm from '../components/TarefaForm'
 import { prioridade } from '../lib/labels'
@@ -125,7 +125,7 @@ export default function Dashboard() {
               </div>
             )}
             {pendencias.map((t) => {
-              const responsavel = membros.find((m) => m.id === t.responsavelId)
+              const responsaveis = membros.filter((m) => t.responsaveisIds.includes(m.id))
               const prio = prioridade(t.prioridade)
               return (
                 <button
@@ -133,7 +133,7 @@ export default function Dashboard() {
                   onClick={() => navigate('/tarefas')}
                   className="flex w-full items-center gap-3 px-5 py-3 text-left hover:bg-slate-50"
                 >
-                  <Avatar membro={responsavel} size="sm" />
+                  <AvatarGroup membros={responsaveis} size="sm" />
                   <div className="min-w-0 flex-1">
                     <p className="truncate text-sm font-medium text-slate-800">{t.titulo}</p>
                     <p className="truncate text-xs text-slate-500">{clienteNome(t.clienteId)}</p>

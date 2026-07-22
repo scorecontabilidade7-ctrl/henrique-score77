@@ -58,5 +58,48 @@ export function prazoRelativo(prazo: string | null): string {
 export function isoRelativo(dias: number): string {
   const d = hoje()
   d.setDate(d.getDate() + dias)
-  return d.toISOString().slice(0, 10)
+  return toIso(d)
+}
+
+/** yyyy-mm-dd in local time (avoids the UTC shift of toISOString). */
+export function toIso(d: Date): string {
+  const y = d.getFullYear()
+  const m = String(d.getMonth() + 1).padStart(2, '0')
+  const dia = String(d.getDate()).padStart(2, '0')
+  return `${y}-${m}-${dia}`
+}
+
+export function hojeIso(): string {
+  return toIso(hoje())
+}
+
+/** Sunday that starts the week containing `base`. */
+export function inicioSemana(base: Date): Date {
+  const d = new Date(base)
+  d.setHours(0, 0, 0, 0)
+  d.setDate(d.getDate() - d.getDay())
+  return d
+}
+
+/** The 7 dates (Sun..Sat) of the week containing `base`, as yyyy-mm-dd. */
+export function diasDaSemana(base: Date): string[] {
+  const ini = inicioSemana(base)
+  return Array.from({ length: 7 }, (_, i) => {
+    const d = new Date(ini)
+    d.setDate(ini.getDate() + i)
+    return toIso(d)
+  })
+}
+
+const DIAS_CURTOS = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb']
+export function nomeDiaCurto(iso: string): string {
+  return DIAS_CURTOS[parseData(iso).getDay()]
+}
+
+const MESES = [
+  'janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho',
+  'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro',
+]
+export function nomeMesAno(d: Date): string {
+  return `${MESES[d.getMonth()]} de ${d.getFullYear()}`
 }

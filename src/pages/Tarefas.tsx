@@ -19,7 +19,7 @@ export default function Tarefas() {
     () =>
       tarefas.filter(
         (t) =>
-          (!filtroResp || t.responsavelId === filtroResp) &&
+          (!filtroResp || t.responsaveisIds.includes(filtroResp)) &&
           (!filtroCliente || t.clienteId === filtroCliente),
       ),
     [tarefas, filtroResp, filtroCliente],

@@ -33,6 +33,39 @@ export function Badge({ children, className = '' }: { children: ReactNode; class
   return <span className={`badge ${className}`}>{children}</span>
 }
 
+/** Overlapping avatars for a set of responsáveis; shows "+N" past the limit. */
+export function AvatarGroup({
+  membros,
+  size = 'sm',
+  limite = 3,
+}: {
+  membros: Membro[]
+  size?: 'sm' | 'md'
+  limite?: number
+}) {
+  if (membros.length === 0) return <Avatar size={size} />
+  const visiveis = membros.slice(0, limite)
+  const resto = membros.length - visiveis.length
+  const dim = size === 'sm' ? 'h-7 w-7 text-xs' : 'h-9 w-9 text-sm'
+  return (
+    <div className="flex items-center -space-x-2">
+      {visiveis.map((m) => (
+        <span key={m.id} className="rounded-full ring-2 ring-white">
+          <Avatar membro={m} size={size} />
+        </span>
+      ))}
+      {resto > 0 && (
+        <span
+          className={`inline-flex items-center justify-center rounded-full bg-slate-200 font-semibold text-slate-600 ring-2 ring-white ${dim}`}
+          title={`+${resto}`}
+        >
+          +{resto}
+        </span>
+      )}
+    </div>
+  )
+}
+
 /**
  * Form field: wraps its control in a <label> so screen readers announce the
  * name without needing matching htmlFor/id pairs on every input.

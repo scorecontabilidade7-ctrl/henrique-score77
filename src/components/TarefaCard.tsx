@@ -2,7 +2,8 @@ import { useStore } from '../data/store'
 import type { Tarefa } from '../types'
 import { estaAtrasada, formatarDataCurta, prazoRelativo, venceEstaSemana } from '../lib/dates'
 import { prioridade, tipoTarefa } from '../lib/labels'
-import { Avatar, Badge } from './ui'
+import { horasDaTarefa } from '../lib/workload'
+import { AvatarGroup, Badge } from './ui'
 import { IconRelogio } from './icons'
 
 interface Props {
@@ -14,11 +15,12 @@ interface Props {
 }
 
 export default function TarefaCard({ tarefa, onClick, draggable, onDragStart }: Props) {
-  const { clientes, membros } = useStore()
+  const { clientes, membros, apontamentos } = useStore()
   const cliente = clientes.find((c) => c.id === tarefa.clienteId)
-  const responsavel = membros.find((m) => m.id === tarefa.responsavelId)
+  const responsaveis = membros.filter((m) => tarefa.responsaveisIds.includes(m.id))
   const prio = prioridade(tarefa.prioridade)
   const tipo = tipoTarefa(tarefa.tipo)
+  const horas = horasDaTarefa(tarefa.id, apontamentos)
 
   const atrasada = tarefa.status !== 'concluido' && estaAtrasada(tarefa.prazo)
   const urgente = tarefa.status !== 'concluido' && !atrasada && venceEstaSemana(tarefa.prazo)
@@ -46,7 +48,7 @@ export default function TarefaCard({ tarefa, onClick, draggable, onDragStart }: 
     >
       <div className="mb-2 flex items-start justify-between gap-2">
         <p className="text-sm font-semibold leading-snug text-slate-800">{tarefa.titulo}</p>
-        <Avatar membro={responsavel} size="sm" />
+        <AvatarGroup membros={responsaveis} size="sm" />
       </div>
 
       {cliente && <p className="mb-2 truncate text-xs text-slate-500">{cliente.nome}</p>}
@@ -66,6 +68,11 @@ export default function TarefaCard({ tarefa, onClick, draggable, onDragStart }: 
           >
             <IconRelogio width={12} height={12} />
             {atrasada || urgente ? prazoRelativo(tarefa.prazo) : formatarDataCurta(tarefa.prazo)}
+          </Badge>
+        )}
+        {horas > 0 && (
+          <Badge className="bg-slate-100 text-slate-500">
+            {horas}h{tarefa.estimativaHoras > 0 ? ` / ${tarefa.estimativaHoras}h` : ''}
           </Badge>
         )}
       </div>

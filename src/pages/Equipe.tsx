@@ -14,10 +14,19 @@ function MembroForm({ membro, onClose }: { membro?: Membro | null; onClose: () =
   const [cor, setCor] = useState(
     membro?.cor ?? CORES_AVATAR[membros.length % CORES_AVATAR.length],
   )
+  const [carga, setCarga] = useState(
+    membro?.cargaHorariaSemanal != null ? String(membro.cargaHorariaSemanal) : '40',
+  )
 
   function salvar() {
     if (!nome.trim()) return
-    const payload = { nome: nome.trim(), cargo: cargo.trim(), email: email.trim(), cor }
+    const payload = {
+      nome: nome.trim(),
+      cargo: cargo.trim(),
+      email: email.trim(),
+      cor,
+      cargaHorariaSemanal: Number(carga) || 0,
+    }
     if (membro) atualizarMembro(membro.id, payload)
     else criarMembro(payload)
     onClose()
@@ -59,10 +68,21 @@ function MembroForm({ membro, onClose }: { membro?: Membro | null; onClose: () =
           <Campo label="Cargo">
             <input className="input" value={cargo} onChange={(e) => setCargo(e.target.value)} placeholder="Ex.: Analista fiscal" />
           </Campo>
-          <Campo label="E-mail">
-            <input className="input" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="nome@escritorio.com.br" />
+          <Campo label="Carga horária semanal (h)">
+            <input
+              type="number"
+              min="0"
+              step="1"
+              className="input"
+              value={carga}
+              onChange={(e) => setCarga(e.target.value)}
+              placeholder="40"
+            />
           </Campo>
         </div>
+        <Campo label="E-mail">
+          <input className="input" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="nome@escritorio.com.br" />
+        </Campo>
         <div role="group" aria-label="Cor do avatar">
           <span className="label">Cor do avatar</span>
           <div className="flex flex-wrap gap-2">

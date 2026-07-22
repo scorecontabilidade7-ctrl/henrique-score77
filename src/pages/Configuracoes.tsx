@@ -4,11 +4,11 @@ import type { DadosApp } from '../types'
 
 export default function Configuracoes() {
   const store = useStore()
-  const { membros, clientes, projetos, tarefas, resetar, limpar } = store
+  const { membros, clientes, projetos, etapas, tarefas, apontamentos, resetar, limpar } = store
   const inputRef = useRef<HTMLInputElement>(null)
 
   function exportar() {
-    const dados: DadosApp = { membros, clientes, projetos, tarefas }
+    const dados: DadosApp = { membros, clientes, projetos, etapas, tarefas, apontamentos }
     const blob = new Blob([JSON.stringify(dados, null, 2)], { type: 'application/json' })
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a')
@@ -24,15 +24,8 @@ export default function Configuracoes() {
       try {
         const dados = JSON.parse(String(leitor.result)) as DadosApp
         if (!Array.isArray(dados.tarefas)) throw new Error('formato inválido')
-        // Rebuild the store from the backup by clearing then recreating.
-        limpar()
-        dados.membros?.forEach(({ id: _id, ...m }) => store.criarMembro(m))
-        dados.clientes?.forEach(({ id: _id, ...c }) => store.criarCliente(c))
-        dados.projetos?.forEach(({ id: _id, ...p }) => store.criarProjeto(p))
-        // criarTarefa insere no topo; percorre ao contrário para manter a ordem original.
-        ;[...(dados.tarefas ?? [])]
-          .reverse()
-          .forEach(({ id: _id, criadaEm: _c, ...t }) => store.criarTarefa(t))
+        // Replace the whole dataset, preserving ids so references stay intact.
+        store.substituirTudo(dados)
         alert('Backup importado com sucesso.')
       } catch {
         alert('Não foi possível ler o arquivo. Verifique se é um backup válido.')

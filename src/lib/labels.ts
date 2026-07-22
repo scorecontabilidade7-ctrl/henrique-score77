@@ -34,6 +34,7 @@ export const prioridade = (p: Prioridade) =>
 export const TIPOS_TAREFA: { id: TipoTarefa; label: string; badge: string }[] = [
   { id: 'contabil', label: 'Contábil', badge: 'bg-indigo-100 text-indigo-700' },
   { id: 'consultoria', label: 'Consultoria', badge: 'bg-violet-100 text-violet-700' },
+  { id: 'reuniao', label: 'Reunião', badge: 'bg-cyan-100 text-cyan-700' },
   { id: 'avulsa', label: 'Avulsa', badge: 'bg-slate-100 text-slate-600' },
 ]
 
@@ -60,6 +61,18 @@ export const STATUS_PROJETO: { id: StatusProjeto; label: string; badge: string }
 
 export const statusProjeto = (s: StatusProjeto) =>
   STATUS_PROJETO.find((x) => x.id === s) ?? STATUS_PROJETO[0]
+
+// Palette for project stages (Etapas), reused in the flow view and calendar.
+export const CORES_ETAPA = [
+  'bg-indigo-500',
+  'bg-emerald-500',
+  'bg-amber-500',
+  'bg-rose-500',
+  'bg-sky-500',
+  'bg-violet-500',
+  'bg-teal-500',
+  'bg-orange-500',
+]
 
 export const CORES_AVATAR = [
   'bg-rose-500',

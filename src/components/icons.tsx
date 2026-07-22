@@ -55,6 +55,13 @@ export const IconProjetos = (p: IconProps) => (
   </svg>
 )
 
+export const IconCalendario = (p: IconProps) => (
+  <svg {...base(p)}>
+    <rect x="3" y="4" width="18" height="18" rx="2" />
+    <path d="M16 2v4M8 2v4M3 10h18" />
+  </svg>
+)
+
 export const IconConfig = (p: IconProps) => (
   <svg {...base(p)}>
     <circle cx="12" cy="12" r="3" />

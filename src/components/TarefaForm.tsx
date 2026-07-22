@@ -2,30 +2,71 @@ import { useState } from 'react'
 import { useStore } from '../data/store'
 import type { Prioridade, StatusTarefa, Tarefa, TipoTarefa } from '../types'
 import { PRIORIDADES, STATUS_TAREFA, TIPOS_TAREFA } from '../lib/labels'
-import { Campo, Modal } from './ui'
+import { Avatar, Campo, Modal } from './ui'
 
 interface Props {
   tarefa?: Tarefa | null
   /** Pre-select a status when creating from a Kanban column. */
   statusInicial?: StatusTarefa
+  /** Pre-fill project/stage when creating from a project detail. */
+  projetoInicial?: string
+  etapaInicial?: string
+  /** Pre-fill scheduling when creating from the calendar. */
+  dataInicial?: string
+  tipoInicial?: TipoTarefa
   onClose: () => void
 }
 
-export default function TarefaForm({ tarefa, statusInicial, onClose }: Props) {
-  const { clientes, membros, projetos, criarTarefa, atualizarTarefa, removerTarefa } = useStore()
+export default function TarefaForm({
+  tarefa,
+  statusInicial,
+  projetoInicial,
+  etapaInicial,
+  dataInicial,
+  tipoInicial,
+  onClose,
+}: Props) {
+  const {
+    clientes,
+    membros,
+    projetos,
+    etapas,
+    criarTarefa,
+    atualizarTarefa,
+    removerTarefa,
+  } = useStore()
   const edicao = Boolean(tarefa)
 
   const [titulo, setTitulo] = useState(tarefa?.titulo ?? '')
   const [descricao, setDescricao] = useState(tarefa?.descricao ?? '')
   const [clienteId, setClienteId] = useState(tarefa?.clienteId ?? '')
-  const [responsavelId, setResponsavelId] = useState(tarefa?.responsavelId ?? '')
-  const [projetoId, setProjetoId] = useState(tarefa?.projetoId ?? '')
-  const [tipo, setTipo] = useState<TipoTarefa>(tarefa?.tipo ?? 'contabil')
+  const [projetoId, setProjetoId] = useState(tarefa?.projetoId ?? projetoInicial ?? '')
+  const [etapaId, setEtapaId] = useState(tarefa?.etapaId ?? etapaInicial ?? '')
+  const [responsaveisIds, setResponsaveisIds] = useState<string[]>(
+    tarefa?.responsaveisIds ?? [],
+  )
+  const [tipo, setTipo] = useState<TipoTarefa>(tarefa?.tipo ?? tipoInicial ?? 'contabil')
   const [prioridade, setPrioridade] = useState<Prioridade>(tarefa?.prioridade ?? 'media')
-  const [status, setStatus] = useState<StatusTarefa>(tarefa?.status ?? statusInicial ?? 'a_fazer')
+  const [status, setStatus] = useState<StatusTarefa>(
+    tarefa?.status ?? statusInicial ?? 'a_fazer',
+  )
   const [prazo, setPrazo] = useState(tarefa?.prazo ?? '')
+  const [estimativaHoras, setEstimativaHoras] = useState(
+    tarefa?.estimativaHoras ? String(tarefa.estimativaHoras) : '',
+  )
+  const [data, setData] = useState(tarefa?.data ?? dataInicial ?? '')
+  const [horaInicio, setHoraInicio] = useState(tarefa?.horaInicio ?? '')
+  const [horaFim, setHoraFim] = useState(tarefa?.horaFim ?? '')
 
-  const projetosDoCliente = projetos.filter((p) => !clienteId || p.clienteId === clienteId)
+  const etapasDoProjeto = etapas
+    .filter((e) => e.projetoId === projetoId)
+    .sort((a, b) => a.ordem - b.ordem)
+
+  function toggleResponsavel(id: string) {
+    setResponsaveisIds((atual) =>
+      atual.includes(id) ? atual.filter((x) => x !== id) : [...atual, id],
+    )
+  }
 
   function salvar() {
     if (!titulo.trim()) return
@@ -33,12 +74,17 @@ export default function TarefaForm({ tarefa, statusInicial, onClose }: Props) {
       titulo: titulo.trim(),
       descricao: descricao.trim(),
       clienteId: clienteId || null,
-      responsavelId: responsavelId || null,
       projetoId: projetoId || null,
+      etapaId: projetoId ? etapaId || null : null,
+      responsaveisIds,
       tipo,
       prioridade,
       status,
       prazo: prazo || null,
+      estimativaHoras: Number(estimativaHoras) || 0,
+      data: data || null,
+      horaInicio: data ? horaInicio || null : null,
+      horaFim: data ? horaFim || null : null,
     }
     if (tarefa) atualizarTarefa(tarefa.id, payload)
     else criarTarefa(payload)
@@ -86,7 +132,7 @@ export default function TarefaForm({ tarefa, statusInicial, onClose }: Props) {
 
         <Campo label="Descrição">
           <textarea
-            className="input min-h-[72px] resize-y"
+            className="input min-h-[64px] resize-y"
             value={descricao}
             onChange={(e) => setDescricao(e.target.value)}
             placeholder="Detalhes, observações, o que precisa ser feito…"
@@ -98,10 +144,7 @@ export default function TarefaForm({ tarefa, statusInicial, onClose }: Props) {
             <select
               className="input"
               value={clienteId}
-              onChange={(e) => {
-                setClienteId(e.target.value)
-                setProjetoId('')
-              }}
+              onChange={(e) => setClienteId(e.target.value)}
             >
               <option value="">— Sem cliente —</option>
               {clientes.map((c) => (
@@ -111,23 +154,64 @@ export default function TarefaForm({ tarefa, statusInicial, onClose }: Props) {
               ))}
             </select>
           </Campo>
-          <Campo label="Responsável">
+          <Campo label="Projeto">
             <select
               className="input"
-              value={responsavelId}
-              onChange={(e) => setResponsavelId(e.target.value)}
+              value={projetoId}
+              onChange={(e) => {
+                setProjetoId(e.target.value)
+                setEtapaId('')
+              }}
             >
-              <option value="">— Sem responsável —</option>
-              {membros.map((m) => (
-                <option key={m.id} value={m.id}>
-                  {m.nome}
+              <option value="">— Sem projeto —</option>
+              {projetos.map((p) => (
+                <option key={p.id} value={p.id}>
+                  {p.nome}
                 </option>
               ))}
             </select>
           </Campo>
         </div>
 
-        <div className="grid grid-cols-2 gap-4">
+        {projetoId && etapasDoProjeto.length > 0 && (
+          <Campo label="Etapa do projeto">
+            <select className="input" value={etapaId} onChange={(e) => setEtapaId(e.target.value)}>
+              <option value="">— Sem etapa —</option>
+              {etapasDoProjeto.map((e) => (
+                <option key={e.id} value={e.id}>
+                  {e.ordem}. {e.nome}
+                </option>
+              ))}
+            </select>
+          </Campo>
+        )}
+
+        <div>
+          <span className="label">Responsáveis</span>
+          <div className="flex flex-wrap gap-2">
+            {membros.map((m) => {
+              const sel = responsaveisIds.includes(m.id)
+              return (
+                <button
+                  key={m.id}
+                  type="button"
+                  onClick={() => toggleResponsavel(m.id)}
+                  aria-pressed={sel}
+                  className={`inline-flex items-center gap-1.5 rounded-full border py-1 pl-1 pr-2.5 text-sm transition-colors ${
+                    sel
+                      ? 'border-brand-400 bg-brand-50 text-brand-700'
+                      : 'border-slate-300 text-slate-600 hover:bg-slate-50'
+                  }`}
+                >
+                  <Avatar membro={m} size="sm" />
+                  {m.nome.split(' ')[0]}
+                </button>
+              )
+            })}
+          </div>
+        </div>
+
+        <div className="grid grid-cols-3 gap-4">
           <Campo label="Tipo">
             <select className="input" value={tipo} onChange={(e) => setTipo(e.target.value as TipoTarefa)}>
               {TIPOS_TAREFA.map((t) => (
@@ -150,9 +234,6 @@ export default function TarefaForm({ tarefa, statusInicial, onClose }: Props) {
               ))}
             </select>
           </Campo>
-        </div>
-
-        <div className="grid grid-cols-2 gap-4">
           <Campo label="Status">
             <select
               className="input"
@@ -166,6 +247,9 @@ export default function TarefaForm({ tarefa, statusInicial, onClose }: Props) {
               ))}
             </select>
           </Campo>
+        </div>
+
+        <div className="grid grid-cols-2 gap-4">
           <Campo label="Prazo">
             <input
               type="date"
@@ -174,24 +258,53 @@ export default function TarefaForm({ tarefa, statusInicial, onClose }: Props) {
               onChange={(e) => setPrazo(e.target.value)}
             />
           </Campo>
+          <Campo label="Estimativa (horas)">
+            <input
+              type="number"
+              min="0"
+              step="0.5"
+              className="input"
+              value={estimativaHoras}
+              onChange={(e) => setEstimativaHoras(e.target.value)}
+              placeholder="0"
+            />
+          </Campo>
         </div>
 
-        {tipo === 'consultoria' && projetosDoCliente.length > 0 && (
-          <Campo label="Projeto">
-            <select
-              className="input"
-              value={projetoId}
-              onChange={(e) => setProjetoId(e.target.value)}
-            >
-              <option value="">— Sem projeto —</option>
-              {projetosDoCliente.map((p) => (
-                <option key={p.id} value={p.id}>
-                  {p.nome}
-                </option>
-              ))}
-            </select>
-          </Campo>
-        )}
+        {/* Agendamento — quando preenchido, aparece no Calendário */}
+        <div className="rounded-lg border border-slate-200 bg-slate-50 p-3">
+          <p className="mb-2 text-sm font-medium text-slate-700">
+            Agendar na agenda <span className="font-normal text-slate-400">(opcional)</span>
+          </p>
+          <div className="grid grid-cols-3 gap-3">
+            <Campo label="Data">
+              <input type="date" className="input" value={data} onChange={(e) => setData(e.target.value)} />
+            </Campo>
+            <Campo label="Início">
+              <input
+                type="time"
+                className="input"
+                value={horaInicio}
+                onChange={(e) => setHoraInicio(e.target.value)}
+                disabled={!data}
+              />
+            </Campo>
+            <Campo label="Fim">
+              <input
+                type="time"
+                className="input"
+                value={horaFim}
+                onChange={(e) => setHoraFim(e.target.value)}
+                disabled={!data}
+              />
+            </Campo>
+          </div>
+          {responsaveisIds.length > 1 && data && (
+            <p className="mt-2 text-xs text-slate-500">
+              Aparecerá na agenda dos {responsaveisIds.length} responsáveis.
+            </p>
+          )}
+        </div>
       </div>
     </Modal>
   )

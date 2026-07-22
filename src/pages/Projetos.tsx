@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { Link } from 'react-router-dom'
 import { useStore } from '../data/store'
 import type { Projeto, StatusProjeto } from '../types'
 import { STATUS_PROJETO, statusProjeto } from '../lib/labels'
@@ -98,7 +99,7 @@ function ProjetoForm({ projeto, onClose }: { projeto?: Projeto | null; onClose: 
 }
 
 export default function Projetos() {
-  const { projetos, clientes, tarefas } = useStore()
+  const { projetos, clientes, tarefas, etapas } = useStore()
   const [form, setForm] = useState<{ open: boolean; projeto?: Projeto | null }>({ open: false })
 
   const clienteNome = (id: string) => clientes.find((c) => c.id === id)?.nome ?? 'Sem cliente'
@@ -133,13 +134,22 @@ export default function Projetos() {
             const doProjeto = tarefas.filter((t) => t.projetoId === p.id)
             const concluidas = doProjeto.filter((t) => t.status === 'concluido').length
             const progresso = doProjeto.length ? Math.round((concluidas / doProjeto.length) * 100) : 0
+            const numEtapas = etapas.filter((e) => e.projetoId === p.id).length
             const st = statusProjeto(p.status)
             return (
               <div key={p.id} className="card p-5">
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0">
-                    <p className="font-semibold text-slate-800">{p.nome}</p>
-                    <p className="text-xs text-slate-500">{clienteNome(p.clienteId)}</p>
+                    <Link
+                      to={`/projetos/${p.id}`}
+                      className="font-semibold text-slate-800 hover:text-brand-600 hover:underline"
+                    >
+                      {p.nome}
+                    </Link>
+                    <p className="text-xs text-slate-500">
+                      {clienteNome(p.clienteId)}
+                      {numEtapas > 0 && ` · ${numEtapas} etapa${numEtapas > 1 ? 's' : ''}`}
+                    </p>
                   </div>
                   <div className="flex items-center gap-1">
                     <Badge className={st.badge}>{st.label}</Badge>
@@ -167,9 +177,13 @@ export default function Projetos() {
                   </div>
                 </div>
 
-                <div className="mt-4 flex gap-4 text-xs text-slate-400">
-                  <span>Início: {formatarData(p.inicio)}</span>
-                  <span>Fim: {formatarData(p.fim)}</span>
+                <div className="mt-4 flex items-center justify-between text-xs text-slate-400">
+                  <span>
+                    {formatarData(p.inicio)} → {formatarData(p.fim)}
+                  </span>
+                  <Link to={`/projetos/${p.id}`} className="font-medium text-brand-600 hover:underline">
+                    Ver etapas →
+                  </Link>
                 </div>
               </div>
             )
