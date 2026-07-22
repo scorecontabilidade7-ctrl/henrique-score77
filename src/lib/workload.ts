@@ -91,6 +91,8 @@ export interface ConsultorResumo {
   membro: Membro
   /** Active clients where this member is the lead (responsável). */
   carteira: Cliente[]
+  /** Active clients where this member assists (not the lead). */
+  assiste: Cliente[]
   /** Monthly recurring revenue from that carteira. */
   mrr: number
   ticketMedio: number
@@ -120,6 +122,9 @@ export function resumoPorConsultor(
   return membros
     .map((membro) => {
       const carteira = clientes.filter((c) => c.ativo && c.responsavelId === membro.id)
+      const assiste = clientes.filter(
+        (c) => c.ativo && c.assistentesIds.includes(membro.id),
+      )
       const mrr = carteira.reduce((s, c) => s + (c.valorMensal || 0), 0)
       const abertas = tarefas.filter(
         (t) => t.responsaveisIds.includes(membro.id) && t.status !== 'concluido',
@@ -127,6 +132,7 @@ export function resumoPorConsultor(
       return {
         membro,
         carteira,
+        assiste,
         mrr,
         ticketMedio: carteira.length ? Math.round(mrr / carteira.length) : 0,
         percentualReceita: mrrTotal > 0 ? mrr / mrrTotal : 0,

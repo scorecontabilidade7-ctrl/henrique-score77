@@ -177,9 +177,11 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         ...t,
         responsaveisIds: t.responsaveisIds.filter((r) => r !== id),
       })),
-      clientes: d.clientes.map((c) =>
-        c.responsavelId === id ? { ...c, responsavelId: null } : c,
-      ),
+      clientes: d.clientes.map((c) => ({
+        ...c,
+        responsavelId: c.responsavelId === id ? null : c.responsavelId,
+        assistentesIds: c.assistentesIds.filter((a) => a !== id),
+      })),
     }))
   }, [])
 

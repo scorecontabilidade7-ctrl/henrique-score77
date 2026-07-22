@@ -152,6 +152,26 @@ export default function Consultores() {
                   </div>
                 )}
               </div>
+
+              {/* Participação como assistente */}
+              {r.assiste.length > 0 && (
+                <div className="mt-4 border-t border-slate-100 pt-3">
+                  <p className="mb-1.5 text-xs font-medium uppercase tracking-wide text-slate-400">
+                    Assiste em {r.assiste.length} {r.assiste.length === 1 ? 'cliente' : 'clientes'}
+                  </p>
+                  <div className="flex flex-wrap gap-1.5">
+                    {r.assiste.map((c) => (
+                      <span
+                        key={c.id}
+                        className="badge bg-slate-100 text-slate-600"
+                        title={c.segmento}
+                      >
+                        {c.nome}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
             </section>
           )
         })}

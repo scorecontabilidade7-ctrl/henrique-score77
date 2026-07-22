@@ -33,7 +33,10 @@ export interface Cliente {
   nome: string
   cnpj: string
   regime: RegimeTributario
+  /** Lead consultant — the financial return is attributed to them. */
   responsavelId: string | null
+  /** Assistants supporting this client (usually one). */
+  assistentesIds: string[]
   ativo: boolean
   /** Monthly consulting fee (R$) — the financial return this client brings. */
   valorMensal: number

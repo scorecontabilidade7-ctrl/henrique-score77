@@ -3,7 +3,7 @@ import { useStore } from '../data/store'
 import type { Cliente, RegimeTributario } from '../types'
 import { REGIMES, regimeLabel } from '../lib/labels'
 import { formatarBRL } from '../lib/dates'
-import { Avatar, Badge, Campo, EmptyState, Modal } from '../components/ui'
+import { Avatar, AvatarGroup, Badge, Campo, EmptyState, Modal } from '../components/ui'
 import { IconEditar, IconPlus } from '../components/icons'
 
 function ClienteForm({ cliente, onClose }: { cliente?: Cliente | null; onClose: () => void }) {
@@ -12,11 +12,18 @@ function ClienteForm({ cliente, onClose }: { cliente?: Cliente | null; onClose: 
   const [cnpj, setCnpj] = useState(cliente?.cnpj ?? '')
   const [regime, setRegime] = useState<RegimeTributario>(cliente?.regime ?? 'simples_nacional')
   const [responsavelId, setResponsavelId] = useState(cliente?.responsavelId ?? '')
+  const [assistentesIds, setAssistentesIds] = useState<string[]>(cliente?.assistentesIds ?? [])
   const [ativo, setAtivo] = useState(cliente?.ativo ?? true)
   const [valorMensal, setValorMensal] = useState(
     cliente?.valorMensal ? String(cliente.valorMensal) : '',
   )
   const [segmento, setSegmento] = useState(cliente?.segmento ?? '')
+
+  function toggleAssistente(id: string) {
+    setAssistentesIds((atual) =>
+      atual.includes(id) ? atual.filter((x) => x !== id) : [...atual, id],
+    )
+  }
 
   function salvar() {
     if (!nome.trim()) return
@@ -25,6 +32,7 @@ function ClienteForm({ cliente, onClose }: { cliente?: Cliente | null; onClose: 
       cnpj: cnpj.trim(),
       regime,
       responsavelId: responsavelId || null,
+      assistentesIds: assistentesIds.filter((a) => a !== responsavelId),
       ativo,
       valorMensal: Number(valorMensal) || 0,
       segmento: segmento.trim(),
@@ -97,6 +105,32 @@ function ClienteForm({ cliente, onClose }: { cliente?: Cliente | null; onClose: 
               <option value="nao">Inativo</option>
             </select>
           </Campo>
+        </div>
+        <div>
+          <span className="label">Assistentes</span>
+          <div className="flex flex-wrap gap-2">
+            {membros
+              .filter((m) => m.id !== responsavelId)
+              .map((m) => {
+                const sel = assistentesIds.includes(m.id)
+                return (
+                  <button
+                    key={m.id}
+                    type="button"
+                    onClick={() => toggleAssistente(m.id)}
+                    aria-pressed={sel}
+                    className={`inline-flex items-center gap-1.5 rounded-full border py-1 pl-1 pr-2.5 text-sm transition-colors ${
+                      sel
+                        ? 'border-brand-400 bg-brand-50 text-brand-700'
+                        : 'border-slate-300 text-slate-600 hover:bg-slate-50'
+                    }`}
+                  >
+                    <Avatar membro={m} size="sm" />
+                    {m.nome.split(' ')[0]}
+                  </button>
+                )
+              })}
+          </div>
         </div>
         <div className="grid grid-cols-2 gap-4">
           <Campo label="Valor mensal (R$)">
@@ -173,6 +207,7 @@ export default function Clientes() {
               <tbody className="divide-y divide-slate-100">
                 {clientes.map((c) => {
                   const resp = membros.find((m) => m.id === c.responsavelId)
+                  const assistentes = membros.filter((m) => c.assistentesIds.includes(m.id))
                   return (
                     <tr key={c.id} className="hover:bg-slate-50">
                       <td className="px-5 py-3">
@@ -191,6 +226,12 @@ export default function Clientes() {
                           </span>
                         ) : (
                           <span className="text-slate-400">—</span>
+                        )}
+                        {assistentes.length > 0 && (
+                          <span className="mt-1 flex items-center gap-1.5 pl-0.5 text-xs text-slate-400">
+                            <AvatarGroup membros={assistentes} size="sm" />
+                            <span>assist.</span>
+                          </span>
                         )}
                       </td>
                       <td className="px-5 py-3">
