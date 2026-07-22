@@ -1,4 +1,4 @@
-import { useMemo } from 'react'
+import { useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useStore } from '../data/store'
 import { resumoPorConsultor } from '../lib/workload'
@@ -9,16 +9,18 @@ import { IconClientes, IconEquipe, IconRelogio } from '../components/icons'
 
 export default function Consultores() {
   const { membros, clientes, tarefas, apontamentos } = useStore()
+  // % of each client's fee credited to the assistant (the rest to the lead).
+  const [pctAssistente, setPctAssistente] = useState(30)
 
   const resumos = useMemo(
-    () => resumoPorConsultor(membros, clientes, tarefas, apontamentos),
-    [membros, clientes, tarefas, apontamentos],
+    () => resumoPorConsultor(membros, clientes, tarefas, apontamentos, pctAssistente / 100),
+    [membros, clientes, tarefas, apontamentos, pctAssistente],
   )
 
   const clientesAtivos = clientes.filter((c) => c.ativo)
   const receitaTotal = clientesAtivos.reduce((s, c) => s + (c.valorMensal || 0), 0)
   const ticketGeral = clientesAtivos.length ? Math.round(receitaTotal / clientesAtivos.length) : 0
-  const maxMrr = Math.max(1, ...resumos.map((r) => r.mrr))
+  const maxCreditada = Math.max(1, ...resumos.map((r) => r.receitaCreditada))
 
   return (
     <div className="space-y-6">
@@ -51,32 +53,68 @@ export default function Consultores() {
 
       {/* Ranking de retorno financeiro */}
       <section className="card">
-        <div className="border-b border-slate-200 px-5 py-4">
-          <h2 className="font-semibold text-slate-800">Retorno financeiro por consultor</h2>
-          <p className="text-xs text-slate-500">
-            Mensalidade da carteira de cada consultor e sua participação na receita.
-          </p>
+        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 px-5 py-4">
+          <div>
+            <h2 className="font-semibold text-slate-800">Retorno financeiro por consultor</h2>
+            <p className="text-xs text-slate-500">
+              Receita creditada a cada consultor, dividida entre responsável e assistente.
+            </p>
+          </div>
+          <label className="flex items-center gap-2 rounded-lg bg-slate-50 px-3 py-2">
+            <span className="text-xs font-medium text-slate-600">Crédito do assistente</span>
+            <input
+              type="range"
+              min="0"
+              max="50"
+              step="5"
+              value={pctAssistente}
+              onChange={(e) => setPctAssistente(Number(e.target.value))}
+              className="w-28 accent-brand-600"
+              aria-label="Percentual de crédito do assistente"
+            />
+            <span className="w-10 text-right text-sm font-semibold text-brand-700">{pctAssistente}%</span>
+          </label>
         </div>
         <div className="divide-y divide-slate-100">
-          {resumos.map((r) => (
-            <div key={r.membro.id} className="flex items-center gap-4 px-5 py-3">
-              <Avatar membro={r.membro} />
-              <div className="min-w-0 flex-1">
-                <div className="flex items-center justify-between gap-2">
-                  <p className="truncate text-sm font-medium text-slate-800">{r.membro.nome}</p>
-                  <span className="shrink-0 text-sm font-semibold text-slate-800">
-                    {formatarBRL(r.mrr)}
-                    <span className="ml-1 text-xs font-normal text-slate-400">
-                      {Math.round(r.percentualReceita * 100)}%
+          {resumos.map((r) => {
+            const larguraResp = (r.creditoResponsavel / maxCreditada) * 100
+            const larguraAssist = (r.creditoAssistente / maxCreditada) * 100
+            return (
+              <div key={r.membro.id} className="flex items-center gap-4 px-5 py-3">
+                <Avatar membro={r.membro} />
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center justify-between gap-2">
+                    <p className="truncate text-sm font-medium text-slate-800">{r.membro.nome}</p>
+                    <span className="shrink-0 text-sm font-semibold text-slate-800">
+                      {formatarBRL(r.receitaCreditada)}
+                      <span className="ml-1 text-xs font-normal text-slate-400">
+                        {Math.round(r.percentualReceita * 100)}%
+                      </span>
                     </span>
-                  </span>
-                </div>
-                <div className="mt-1.5 h-2.5 w-full overflow-hidden rounded-full bg-slate-100">
-                  <div className="h-full rounded-full bg-emerald-500" style={{ width: `${(r.mrr / maxMrr) * 100}%` }} />
+                  </div>
+                  {/* Barra empilhada: responsável (verde) + assistente (âmbar) */}
+                  <div className="mt-1.5 flex h-2.5 w-full overflow-hidden rounded-full bg-slate-100">
+                    <div className="h-full bg-emerald-500" style={{ width: `${larguraResp}%` }} />
+                    <div className="h-full bg-amber-400" style={{ width: `${larguraAssist}%` }} />
+                  </div>
+                  <div className="mt-1 flex gap-3 text-[11px] text-slate-400">
+                    <span>Responsável {formatarBRL(r.creditoResponsavel)}</span>
+                    {r.creditoAssistente > 0 && (
+                      <span>Assistente {formatarBRL(r.creditoAssistente)}</span>
+                    )}
+                  </div>
                 </div>
               </div>
-            </div>
-          ))}
+            )
+          })}
+        </div>
+        <div className="flex items-center gap-4 border-t border-slate-100 px-5 py-2.5 text-xs text-slate-500">
+          <span className="flex items-center gap-1.5">
+            <span className="h-2.5 w-2.5 rounded-full bg-emerald-500" /> Como responsável
+          </span>
+          <span className="flex items-center gap-1.5">
+            <span className="h-2.5 w-2.5 rounded-full bg-amber-400" /> Como assistente
+          </span>
         </div>
       </section>
 
@@ -93,8 +131,15 @@ export default function Consultores() {
                   <p className="text-xs text-slate-500">{r.membro.cargo}</p>
                 </div>
                 <div className="ml-auto text-right">
-                  <p className="text-lg font-bold text-emerald-600">{formatarBRL(r.mrr)}</p>
-                  <p className="text-[11px] text-slate-400">retorno mensal</p>
+                  <p className="text-lg font-bold text-emerald-600">{formatarBRL(r.receitaCreditada)}</p>
+                  <p className="text-[11px] text-slate-400">
+                    retorno creditado
+                    {r.creditoAssistente > 0 && (
+                      <span className="block">
+                        resp. {formatarBRL(r.creditoResponsavel)} + assist. {formatarBRL(r.creditoAssistente)}
+                      </span>
+                    )}
+                  </p>
                 </div>
               </div>
 
@@ -178,8 +223,9 @@ export default function Consultores() {
       </div>
 
       <p className="text-xs text-slate-400">
-        A receita é atribuída ao consultor <strong>responsável</strong> por cada cliente. Ajuste os
-        valores e responsáveis na aba{' '}
+        Cada mensalidade é dividida: <strong>{pctAssistente}%</strong> creditados ao assistente e o
+        restante ao responsável (clientes sem assistente creditam 100% ao responsável). Ajuste o
+        percentual acima e os responsáveis/assistentes na aba{' '}
         <Link to="/clientes" className="text-brand-600 hover:underline">
           Clientes
         </Link>

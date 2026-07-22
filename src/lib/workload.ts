@@ -93,10 +93,16 @@ export interface ConsultorResumo {
   carteira: Cliente[]
   /** Active clients where this member assists (not the lead). */
   assiste: Cliente[]
-  /** Monthly recurring revenue from that carteira. */
+  /** Full monthly value of the carteira (as lead). */
   mrr: number
   ticketMedio: number
-  /** Share of the office's total MRR (0..1). */
+  /** Revenue credited as lead, after the assistant split. */
+  creditoResponsavel: number
+  /** Revenue credited from clients this member assists. */
+  creditoAssistente: number
+  /** Total credited revenue (lead + assistant). */
+  receitaCreditada: number
+  /** Share of the office's total revenue, based on credited revenue (0..1). */
   percentualReceita: number
   abertas: number
   atrasadas: number
@@ -105,27 +111,41 @@ export interface ConsultorResumo {
 }
 
 /**
- * Per-consultant summary: their client portfolio, financial return (MRR),
- * workload and logged hours. Revenue is attributed to the client's lead
- * consultant (responsável), mirroring the source spreadsheet.
+ * Per-consultant summary: portfolio, financial return, workload and hours.
+ *
+ * Revenue is split between the lead (responsável) and the assistant(s):
+ * each client's monthly value gives `pctAssistente` to the assistant(s)
+ * (divided equally when there is more than one) and the rest to the lead.
+ * Clients with no assistant credit the full value to the lead, so the sum
+ * across consultants always equals total MRR.
  */
 export function resumoPorConsultor(
   membros: Membro[],
   clientes: Cliente[],
   tarefas: Tarefa[],
   apontamentos: Apontamento[],
+  pctAssistente = 0,
 ): ConsultorResumo[] {
-  const mrrTotal = clientes
-    .filter((c) => c.ativo)
-    .reduce((s, c) => s + (c.valorMensal || 0), 0)
+  const ativos = clientes.filter((c) => c.ativo)
+  const mrrTotal = ativos.reduce((s, c) => s + (c.valorMensal || 0), 0)
 
   return membros
     .map((membro) => {
-      const carteira = clientes.filter((c) => c.ativo && c.responsavelId === membro.id)
-      const assiste = clientes.filter(
-        (c) => c.ativo && c.assistentesIds.includes(membro.id),
-      )
+      const carteira = ativos.filter((c) => c.responsavelId === membro.id)
+      const assiste = ativos.filter((c) => c.assistentesIds.includes(membro.id))
       const mrr = carteira.reduce((s, c) => s + (c.valorMensal || 0), 0)
+
+      const creditoResponsavel = carteira.reduce((s, c) => {
+        const temAssistente = c.assistentesIds.length > 0
+        const fatia = temAssistente ? 1 - pctAssistente : 1
+        return s + (c.valorMensal || 0) * fatia
+      }, 0)
+      const creditoAssistente = assiste.reduce((s, c) => {
+        const nAssist = c.assistentesIds.length || 1
+        return s + ((c.valorMensal || 0) * pctAssistente) / nAssist
+      }, 0)
+      const receitaCreditada = creditoResponsavel + creditoAssistente
+
       const abertas = tarefas.filter(
         (t) => t.responsaveisIds.includes(membro.id) && t.status !== 'concluido',
       )
@@ -135,7 +155,10 @@ export function resumoPorConsultor(
         assiste,
         mrr,
         ticketMedio: carteira.length ? Math.round(mrr / carteira.length) : 0,
-        percentualReceita: mrrTotal > 0 ? mrr / mrrTotal : 0,
+        creditoResponsavel,
+        creditoAssistente,
+        receitaCreditada,
+        percentualReceita: mrrTotal > 0 ? receitaCreditada / mrrTotal : 0,
         abertas: abertas.length,
         atrasadas: abertas.filter((t) => estaAtrasada(t.prazo)).length,
         horasApontadas: apontamentos
@@ -144,7 +167,7 @@ export function resumoPorConsultor(
         capacidade: membro.cargaHorariaSemanal || 0,
       }
     })
-    .sort((a, b) => b.mrr - a.mrr)
+    .sort((a, b) => b.receitaCreditada - a.receitaCreditada)
 }
 
 /**
