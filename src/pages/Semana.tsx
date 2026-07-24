@@ -15,7 +15,24 @@ const COR_PRIORIDADE: Record<Prioridade, string> = {
   urgente: 'bg-rose-500',
 }
 
-function Cartao({ tarefa, onClick, onDragStart }: { tarefa: Tarefa; onClick: () => void; onDragStart: () => void }) {
+interface OpcaoDia {
+  value: string // '' = sem previsão
+  label: string
+}
+
+function Cartao({
+  tarefa,
+  onClick,
+  onDragStart,
+  opcoes,
+  onMover,
+}: {
+  tarefa: Tarefa
+  onClick: () => void
+  onDragStart: () => void
+  opcoes: OpcaoDia[]
+  onMover: (data: string | null) => void
+}) {
   const { clientes, membros } = useStore()
   const cliente = clientes.find((c) => c.id === tarefa.clienteId)
   const responsaveis = membros.filter((m) => tarefa.responsaveisIds.includes(m.id))
@@ -62,6 +79,25 @@ function Cartao({ tarefa, onClick, onDragStart }: { tarefa: Tarefa; onClick: () 
           <AvatarGroup membros={responsaveis} size="sm" limite={3} />
         </span>
       </div>
+      {/* Mover para outro dia — funciona no toque (celular/tablet), onde arrastar não funciona */}
+      <label className="mt-2 flex items-center gap-1.5 border-t border-slate-100 pt-2 text-xs text-slate-400">
+        <span className="shrink-0">Mover para</span>
+        <select
+          value={tarefa.data ?? ''}
+          onClick={(e) => e.stopPropagation()}
+          onChange={(e) => {
+            e.stopPropagation()
+            onMover(e.target.value || null)
+          }}
+          className="min-w-0 flex-1 rounded border border-slate-200 bg-white px-1.5 py-1 text-xs text-slate-600 outline-none focus:border-brand-400"
+        >
+          {opcoes.map((o) => (
+            <option key={o.value || 'sem'} value={o.value}>
+              {o.label}
+            </option>
+          ))}
+        </select>
+      </label>
     </article>
   )
 }
@@ -94,6 +130,15 @@ export default function Semana() {
     }
   }
 
+  // Options for the per-card day picker (touch-friendly alternative to drag).
+  const opcoesDia: OpcaoDia[] = [
+    { value: '', label: 'Sem previsão' },
+    ...dias.map((dia) => ({
+      value: dia,
+      label: `${nomeDiaCurto(dia)} ${parseData(dia).getDate()}`,
+    })),
+  ]
+
   function mudarSemana(delta: number) {
     setBase((b) => {
       const d = new Date(b)
@@ -118,7 +163,7 @@ export default function Semana() {
         <div>
           <h1 className="text-2xl font-bold text-slate-800">Semana</h1>
           <p className="text-sm text-slate-500">
-            Quadro por dia. Arraste os cartões entre os dias e abra para ver os checklists.
+            Quadro por dia. Arraste os cartões (ou use “Mover para” no cartão) e abra para ver os checklists.
           </p>
         </div>
       </header>
@@ -184,6 +229,8 @@ export default function Semana() {
                       tarefa={t}
                       onClick={() => setDetalhe(t.id)}
                       onDragStart={() => setArrastando(t.id)}
+                      opcoes={opcoesDia}
+                      onMover={(data) => atualizarTarefa(t.id, { data })}
                     />
                   ))}
                   <button
