@@ -5,9 +5,18 @@
 @layer base {
   html {
     -webkit-font-smoothing: antialiased;
+    /* Força controles nativos (select, checkbox) em tema claro,
+       independente do modo escuro do sistema operacional. */
+    color-scheme: light;
   }
   body {
     @apply bg-slate-100 text-slate-800;
+  }
+  /* Campos e selects sempre com fundo branco e texto legível. */
+  input,
+  select,
+  textarea {
+    @apply bg-white text-slate-800;
   }
 }
 
