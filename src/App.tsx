@@ -8,25 +8,36 @@ import Agenda from './pages/Agenda'
 import Semana from './pages/Semana'
 import Horas from './pages/Horas'
 import Consultores from './pages/Consultores'
+import Financeiro from './pages/Financeiro'
+import Treinamentos from './pages/Treinamentos'
 import Clientes from './pages/Clientes'
 import Equipe from './pages/Equipe'
 import Configuracoes from './pages/Configuracoes'
+import { RotaProtegida } from './lib/acesso'
+import type { PaginaPermissao } from './types'
+import type { ReactNode } from 'react'
+
+const P = ({ pagina, children }: { pagina: PaginaPermissao; children: ReactNode }) => (
+  <RotaProtegida pagina={pagina}>{children}</RotaProtegida>
+)
 
 export default function App() {
   return (
     <Routes>
       <Route element={<Layout />}>
         <Route index element={<Dashboard />} />
-        <Route path="tarefas" element={<Tarefas />} />
-        <Route path="projetos" element={<Projetos />} />
-        <Route path="projetos/:id" element={<ProjetoDetalhe />} />
-        <Route path="agenda" element={<Agenda />} />
-        <Route path="semana" element={<Semana />} />
-        <Route path="horas" element={<Horas />} />
-        <Route path="consultores" element={<Consultores />} />
-        <Route path="clientes" element={<Clientes />} />
-        <Route path="equipe" element={<Equipe />} />
-        <Route path="configuracoes" element={<Configuracoes />} />
+        <Route path="tarefas" element={<P pagina="tarefas"><Tarefas /></P>} />
+        <Route path="projetos" element={<P pagina="projetos"><Projetos /></P>} />
+        <Route path="projetos/:id" element={<P pagina="projetos"><ProjetoDetalhe /></P>} />
+        <Route path="agenda" element={<P pagina="agenda"><Agenda /></P>} />
+        <Route path="semana" element={<P pagina="semana"><Semana /></P>} />
+        <Route path="horas" element={<P pagina="horas"><Horas /></P>} />
+        <Route path="consultores" element={<P pagina="consultores"><Consultores /></P>} />
+        <Route path="financeiro" element={<P pagina="financeiro"><Financeiro /></P>} />
+        <Route path="treinamentos" element={<P pagina="treinamentos"><Treinamentos /></P>} />
+        <Route path="clientes" element={<P pagina="clientes"><Clientes /></P>} />
+        <Route path="equipe" element={<P pagina="equipe"><Equipe /></P>} />
+        <Route path="configuracoes" element={<P pagina="configuracoes"><Configuracoes /></P>} />
       </Route>
     </Routes>
   )

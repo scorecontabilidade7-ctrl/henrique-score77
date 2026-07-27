@@ -1,5 +1,6 @@
 import type { DadosApp } from '../types'
 import { isoRelativo } from '../lib/dates'
+import { PERMISSOES_PADRAO } from '../lib/permissoes'
 
 // Sample data so the office sees a working product on first open.
 // Inspired by a real consulting schedule: a project split into stages (Etapas),
@@ -9,11 +10,11 @@ const agora = () => new Date().toISOString()
 
 export const dadosIniciais: DadosApp = {
   membros: [
-    { id: 'm1', nome: 'Henrique Figueira', cargo: 'Consultor líder', email: 'henrique@escritorio.com.br', cor: 'bg-indigo-500', cargaHorariaSemanal: 44 },
-    { id: 'm2', nome: 'Amanda Ribeiro', cargo: 'Consultora sênior', email: 'amanda@escritorio.com.br', cor: 'bg-rose-500', cargaHorariaSemanal: 40 },
-    { id: 'm3', nome: 'Bruno Carvalho', cargo: 'Analista fiscal', email: 'bruno@escritorio.com.br', cor: 'bg-emerald-500', cargaHorariaSemanal: 40 },
-    { id: 'm4', nome: 'Carla Nunes', cargo: 'Analista de folha', email: 'carla@escritorio.com.br', cor: 'bg-amber-500', cargaHorariaSemanal: 30 },
-    { id: 'm5', nome: 'Diego Martins', cargo: 'Consultor tributário', email: 'diego@escritorio.com.br', cor: 'bg-sky-500', cargaHorariaSemanal: 40 },
+    { id: 'm1', nome: 'Henrique Figueira', cargo: 'Consultor líder', email: 'henrique@escritorio.com.br', cor: 'bg-indigo-500', cargaHorariaSemanal: 44, perfil: 'administrador', permissoes: PERMISSOES_PADRAO.administrador, custoMensal: 3500 },
+    { id: 'm2', nome: 'Amanda Ribeiro', cargo: 'Consultora sênior', email: 'amanda@escritorio.com.br', cor: 'bg-rose-500', cargaHorariaSemanal: 40, perfil: 'gestor', permissoes: PERMISSOES_PADRAO.gestor, custoMensal: 2800 },
+    { id: 'm3', nome: 'Bruno Carvalho', cargo: 'Analista fiscal', email: 'bruno@escritorio.com.br', cor: 'bg-emerald-500', cargaHorariaSemanal: 40, perfil: 'consultor', permissoes: PERMISSOES_PADRAO.consultor, custoMensal: 1800 },
+    { id: 'm4', nome: 'Carla Nunes', cargo: 'Analista de folha', email: 'carla@escritorio.com.br', cor: 'bg-amber-500', cargaHorariaSemanal: 30, perfil: 'consultor', permissoes: PERMISSOES_PADRAO.consultor, custoMensal: 1500 },
+    { id: 'm5', nome: 'Diego Martins', cargo: 'Consultor tributário', email: 'diego@escritorio.com.br', cor: 'bg-sky-500', cargaHorariaSemanal: 40, perfil: 'consultor', permissoes: PERMISSOES_PADRAO.consultor, custoMensal: 2000 },
   ],
   clientes: [
     { id: 'c1', nome: 'Padaria Pão Quente Ltda', cnpj: '12.345.678/0001-90', regime: 'simples_nacional', responsavelId: 'm3', assistentesIds: ['m4'], ativo: true, valorMensal: 900, segmento: 'Alimentação' },
@@ -123,4 +124,33 @@ export const dadosIniciais: DadosApp = {
     { id: 'a7', tarefaId: 't13', membroId: 'm4', data: isoRelativo(-1), horas: 3, comentario: 'Folha em andamento.' },
     { id: 'a8', tarefaId: 'r3', membroId: 'm2', data: isoRelativo(-3), horas: 2, comentario: 'Preparação do treinamento.' },
   ],
+  despesas: [
+    { id: 'd1', projetoId: 'p1', categoria: 'Transporte', descricao: 'Deslocamento até o cliente', valor: 320, data: isoRelativo(-10) },
+    { id: 'd2', projetoId: 'p1', categoria: 'Alimentação', descricao: 'Almoço da equipe em visita', valor: 180, data: isoRelativo(-10) },
+    { id: 'd3', projetoId: 'p1', categoria: 'Assinaturas', descricao: 'Ferramenta de BI (mensal)', valor: 250, data: isoRelativo(-5) },
+    { id: 'd4', projetoId: 'p2', categoria: 'Serviços terceirizados', descricao: 'Migração de dados (freelancer)', valor: 1200, data: isoRelativo(-3) },
+    { id: 'd5', projetoId: 'p2', categoria: 'Materiais', descricao: 'Licenças de software', valor: 600, data: isoRelativo(-2) },
+    { id: 'd6', projetoId: 'p3', categoria: 'Hospedagem', descricao: 'Diária para constituição da filial', valor: 450, data: isoRelativo(-1) },
+  ],
+  treinamentos: [
+    { id: 'tr1', membroId: 'm3', tema: 'SPED e obrigações acessórias', horas: 8, data: isoRelativo(-12) },
+    { id: 'tr2', membroId: 'm3', tema: 'Excel avançado para contabilidade', horas: 6, data: isoRelativo(-5) },
+    { id: 'tr3', membroId: 'm2', tema: 'Planejamento tributário', horas: 12, data: isoRelativo(-8) },
+    { id: 'tr4', membroId: 'm5', tema: 'Reforma tributária 2026', horas: 10, data: isoRelativo(-6) },
+    { id: 'tr5', membroId: 'm4', tema: 'eSocial e folha de pagamento', horas: 4, data: isoRelativo(-3) },
+    { id: 'tr6', membroId: 'm1', tema: 'Liderança e gestão de equipes', horas: 16, data: isoRelativo(-15) },
+  ],
+  categoriasDespesa: [
+    'Alimentação',
+    'Transporte',
+    'Hospedagem',
+    'Materiais',
+    'Assinaturas',
+    'Serviços terceirizados',
+  ],
+  custosArea: [
+    { id: 'ca1', area: 'Consultoria', valorMensal: 1500 },
+    { id: 'ca2', area: 'Contabilidade', valorMensal: 1000 },
+  ],
+  usuarioAtualId: 'm1',
 }

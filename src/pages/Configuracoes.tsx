@@ -4,11 +4,18 @@ import type { DadosApp } from '../types'
 
 export default function Configuracoes() {
   const store = useStore()
-  const { membros, clientes, projetos, etapas, tarefas, apontamentos, resetar, limpar } = store
+  const {
+    membros, clientes, projetos, etapas, tarefas, apontamentos,
+    despesas, treinamentos, categoriasDespesa, custosArea, usuarioAtualId,
+    resetar, limpar,
+  } = store
   const inputRef = useRef<HTMLInputElement>(null)
 
   function exportar() {
-    const dados: DadosApp = { membros, clientes, projetos, etapas, tarefas, apontamentos }
+    const dados: DadosApp = {
+      membros, clientes, projetos, etapas, tarefas, apontamentos,
+      despesas, treinamentos, categoriasDespesa, custosArea, usuarioAtualId,
+    }
     const blob = new Blob([JSON.stringify(dados, null, 2)], { type: 'application/json' })
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a')

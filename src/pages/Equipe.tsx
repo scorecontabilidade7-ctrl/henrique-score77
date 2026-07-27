@@ -1,9 +1,10 @@
 import { useState } from 'react'
 import { useStore } from '../data/store'
-import type { Membro } from '../types'
+import type { Membro, PaginaPermissao, Perfil } from '../types'
 import { cargaPorMembro } from '../lib/workload'
 import { CORES_AVATAR } from '../lib/labels'
-import { Avatar, Campo, EmptyState, Modal } from '../components/ui'
+import { PAGINAS, PERFIS, PERMISSOES_PADRAO, perfilLabel } from '../lib/permissoes'
+import { Avatar, Badge, Campo, EmptyState, Modal } from '../components/ui'
 import { IconEditar, IconPlus } from '../components/icons'
 
 function MembroForm({ membro, onClose }: { membro?: Membro | null; onClose: () => void }) {
@@ -17,6 +18,25 @@ function MembroForm({ membro, onClose }: { membro?: Membro | null; onClose: () =
   const [carga, setCarga] = useState(
     membro?.cargaHorariaSemanal != null ? String(membro.cargaHorariaSemanal) : '40',
   )
+  const [perfil, setPerfil] = useState<Perfil>(membro?.perfil ?? 'consultor')
+  const [permissoes, setPermissoes] = useState<PaginaPermissao[]>(
+    membro?.permissoes ?? PERMISSOES_PADRAO.consultor,
+  )
+  const [custo, setCusto] = useState(
+    membro?.custoMensal != null ? String(membro.custoMensal) : '',
+  )
+
+  // Choosing a profile resets permissions to that profile's defaults.
+  function escolherPerfil(p: Perfil) {
+    setPerfil(p)
+    setPermissoes(PERMISSOES_PADRAO[p])
+  }
+
+  function togglePermissao(id: PaginaPermissao) {
+    setPermissoes((atual) =>
+      atual.includes(id) ? atual.filter((x) => x !== id) : [...atual, id],
+    )
+  }
 
   function salvar() {
     if (!nome.trim()) return
@@ -26,6 +46,9 @@ function MembroForm({ membro, onClose }: { membro?: Membro | null; onClose: () =
       email: email.trim(),
       cor,
       cargaHorariaSemanal: Number(carga) || 0,
+      perfil,
+      permissoes,
+      custoMensal: Number(custo) || 0,
     }
     if (membro) atualizarMembro(membro.id, payload)
     else criarMembro(payload)
@@ -100,6 +123,48 @@ function MembroForm({ membro, onClose }: { membro?: Membro | null; onClose: () =
             ))}
           </div>
         </div>
+
+        {/* Perfil de acesso + custo */}
+        <div className="grid grid-cols-2 gap-4">
+          <Campo label="Perfil de acesso">
+            <select className="input" value={perfil} onChange={(e) => escolherPerfil(e.target.value as Perfil)}>
+              {PERFIS.map((p) => (
+                <option key={p.id} value={p.id}>
+                  {p.label}
+                </option>
+              ))}
+            </select>
+          </Campo>
+          <Campo label="Custo mensal (R$)">
+            <input
+              type="number"
+              min="0"
+              step="100"
+              className="input"
+              value={custo}
+              onChange={(e) => setCusto(e.target.value)}
+              placeholder="Ex.: 5000"
+            />
+          </Campo>
+        </div>
+
+        {/* Permissões de visualização */}
+        <div role="group" aria-label="Telas visíveis">
+          <span className="label">O que este usuário pode visualizar</span>
+          <div className="grid grid-cols-2 gap-x-4 gap-y-1.5 rounded-lg border border-slate-200 p-3 sm:grid-cols-3">
+            {PAGINAS.map((pg) => (
+              <label key={pg.id} className="flex items-center gap-2 text-sm text-slate-700">
+                <input
+                  type="checkbox"
+                  checked={permissoes.includes(pg.id)}
+                  onChange={() => togglePermissao(pg.id)}
+                  className="h-4 w-4 rounded border-slate-300 accent-brand-600"
+                />
+                {pg.label}
+              </label>
+            ))}
+          </div>
+        </div>
       </div>
     </Modal>
   )
@@ -144,6 +209,17 @@ export default function Equipe() {
                   <div>
                     <p className="font-semibold text-slate-800">{membro.nome}</p>
                     <p className="text-xs text-slate-500">{membro.cargo || '—'}</p>
+                    <Badge
+                      className={`mt-1 ${
+                        membro.perfil === 'administrador'
+                          ? 'bg-brand-100 text-brand-700'
+                          : membro.perfil === 'gestor'
+                            ? 'bg-sky-100 text-sky-700'
+                            : 'bg-slate-100 text-slate-600'
+                      }`}
+                    >
+                      {perfilLabel(membro.perfil)}
+                    </Badge>
                   </div>
                 </div>
                 <button

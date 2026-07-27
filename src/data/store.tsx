@@ -10,13 +10,17 @@ import {
 import type {
   Apontamento,
   Cliente,
+  CustoArea,
   DadosApp,
+  Despesa,
   Etapa,
   Membro,
   Projeto,
   Tarefa,
+  Treinamento,
 } from '../types'
 import { dadosIniciais } from './seed'
+import { PERMISSOES_PADRAO } from '../lib/permissoes'
 
 // Coerce possibly-incomplete records (older data / imports) into the current
 // shape so the UI can rely on arrays always being present.
@@ -39,14 +43,35 @@ function normCliente(c: Partial<Cliente>): Cliente {
   }
 }
 
-function normalizar(d: Partial<DadosApp>): DadosApp {
+function normMembro(m: Partial<Membro>): Membro {
+  const perfil = m.perfil ?? 'consultor'
   return {
-    membros: d.membros ?? [],
+    ...(m as Membro),
+    perfil,
+    permissoes: m.permissoes ?? PERMISSOES_PADRAO[perfil],
+    custoMensal: m.custoMensal ?? 0,
+    cargaHorariaSemanal: m.cargaHorariaSemanal ?? 40,
+  }
+}
+
+const CATEGORIAS_PADRAO = [
+  'Alimentação', 'Transporte', 'Hospedagem', 'Materiais', 'Assinaturas', 'Serviços terceirizados',
+]
+
+function normalizar(d: Partial<DadosApp>): DadosApp {
+  const membros = (d.membros ?? []).map(normMembro)
+  return {
+    membros,
     clientes: (d.clientes ?? []).map(normCliente),
     projetos: d.projetos ?? [],
     etapas: d.etapas ?? [],
     tarefas: (d.tarefas ?? []).map(normTarefa),
     apontamentos: d.apontamentos ?? [],
+    despesas: d.despesas ?? [],
+    treinamentos: d.treinamentos ?? [],
+    categoriasDespesa: d.categoriasDespesa ?? [...CATEGORIAS_PADRAO],
+    custosArea: d.custosArea ?? [],
+    usuarioAtualId: d.usuarioAtualId ?? membros[0]?.id ?? null,
   }
 }
 
@@ -59,7 +84,7 @@ function normalizar(d: Partial<DadosApp>): DadosApp {
 // API calls — the rest of the app talks to `useStore()` and never changes.
 // ---------------------------------------------------------------------------
 
-const CHAVE = 'gestor-escritorio:v3'
+const CHAVE = 'gestor-escritorio:v4'
 
 function carregar(): DadosApp {
   try {
@@ -110,6 +135,20 @@ interface StoreContextValue extends DadosApp {
   // Apontamentos
   criarApontamento: (a: Omit<Apontamento, 'id'>) => void
   removerApontamento: (id: string) => void
+  // Despesas
+  criarDespesa: (d: Omit<Despesa, 'id'>) => void
+  removerDespesa: (id: string) => void
+  // Categorias de despesa
+  adicionarCategoria: (nome: string) => void
+  // Treinamentos
+  criarTreinamento: (t: Omit<Treinamento, 'id'>) => void
+  removerTreinamento: (id: string) => void
+  // Custos por área
+  criarCustoArea: (c: Omit<CustoArea, 'id'>) => void
+  atualizarCustoArea: (id: string, patch: Partial<CustoArea>) => void
+  removerCustoArea: (id: string) => void
+  // Usuário atual (visão/permissões)
+  definirUsuarioAtual: (id: string) => void
   // Utilidades
   substituirTudo: (dados: DadosApp) => void
   resetar: () => void
@@ -125,6 +164,11 @@ const vazio: DadosApp = {
   etapas: [],
   tarefas: [],
   apontamentos: [],
+  despesas: [],
+  treinamentos: [],
+  categoriasDespesa: [...CATEGORIAS_PADRAO],
+  custosArea: [],
+  usuarioAtualId: null,
 }
 
 export function StoreProvider({ children }: { children: ReactNode }) {
@@ -197,6 +241,9 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       ...d,
       membros: d.membros.filter((m) => m.id !== id),
       apontamentos: d.apontamentos.filter((a) => a.membroId !== id),
+      treinamentos: d.treinamentos.filter((t) => t.membroId !== id),
+      usuarioAtualId:
+        d.usuarioAtualId === id ? (d.membros.find((m) => m.id !== id)?.id ?? null) : d.usuarioAtualId,
       tarefas: d.tarefas.map((t) => ({
         ...t,
         responsaveisIds: t.responsaveisIds.filter((r) => r !== id),
@@ -225,6 +272,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       ...d,
       projetos: d.projetos.filter((p) => p.id !== id),
       etapas: d.etapas.filter((e) => e.projetoId !== id),
+      despesas: d.despesas.filter((x) => x.projetoId !== id),
       tarefas: d.tarefas.map((t) =>
         t.projetoId === id ? { ...t, projetoId: null, etapaId: null } : t,
       ),
@@ -266,6 +314,51 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     }))
   }, [])
 
+  const criarDespesa = useCallback((desp: Omit<Despesa, 'id'>) => {
+    setDados((d) => ({ ...d, despesas: [{ ...desp, id: novoId() }, ...d.despesas] }))
+  }, [])
+
+  const removerDespesa = useCallback((id: string) => {
+    setDados((d) => ({ ...d, despesas: d.despesas.filter((x) => x.id !== id) }))
+  }, [])
+
+  const adicionarCategoria = useCallback((nome: string) => {
+    const n = nome.trim()
+    if (!n) return
+    setDados((d) =>
+      d.categoriasDespesa.some((c) => c.toLowerCase() === n.toLowerCase())
+        ? d
+        : { ...d, categoriasDespesa: [...d.categoriasDespesa, n] },
+    )
+  }, [])
+
+  const criarTreinamento = useCallback((t: Omit<Treinamento, 'id'>) => {
+    setDados((d) => ({ ...d, treinamentos: [{ ...t, id: novoId() }, ...d.treinamentos] }))
+  }, [])
+
+  const removerTreinamento = useCallback((id: string) => {
+    setDados((d) => ({ ...d, treinamentos: d.treinamentos.filter((x) => x.id !== id) }))
+  }, [])
+
+  const criarCustoArea = useCallback((c: Omit<CustoArea, 'id'>) => {
+    setDados((d) => ({ ...d, custosArea: [...d.custosArea, { ...c, id: novoId() }] }))
+  }, [])
+
+  const atualizarCustoArea = useCallback((id: string, patch: Partial<CustoArea>) => {
+    setDados((d) => ({
+      ...d,
+      custosArea: d.custosArea.map((c) => (c.id === id ? { ...c, ...patch } : c)),
+    }))
+  }, [])
+
+  const removerCustoArea = useCallback((id: string) => {
+    setDados((d) => ({ ...d, custosArea: d.custosArea.filter((c) => c.id !== id) }))
+  }, [])
+
+  const definirUsuarioAtual = useCallback((id: string) => {
+    setDados((d) => ({ ...d, usuarioAtualId: id }))
+  }, [])
+
   // Replace the whole dataset at once, preserving ids (used by backup import).
   const substituirTudo = useCallback((novos: DadosApp) => {
     setDados(normalizar(novos))
@@ -294,6 +387,15 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       removerEtapa,
       criarApontamento,
       removerApontamento,
+      criarDespesa,
+      removerDespesa,
+      adicionarCategoria,
+      criarTreinamento,
+      removerTreinamento,
+      criarCustoArea,
+      atualizarCustoArea,
+      removerCustoArea,
+      definirUsuarioAtual,
       substituirTudo,
       resetar,
       limpar,
@@ -317,6 +419,15 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       removerEtapa,
       criarApontamento,
       removerApontamento,
+      criarDespesa,
+      removerDespesa,
+      adicionarCategoria,
+      criarTreinamento,
+      removerTreinamento,
+      criarCustoArea,
+      atualizarCustoArea,
+      removerCustoArea,
+      definirUsuarioAtual,
       substituirTudo,
       resetar,
       limpar,

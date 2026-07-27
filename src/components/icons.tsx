@@ -75,6 +75,20 @@ export const IconChecklist = (p: IconProps) => (
   </svg>
 )
 
+export const IconDinheiro = (p: IconProps) => (
+  <svg {...base(p)}>
+    <line x1="12" y1="1" x2="12" y2="23" />
+    <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
+  </svg>
+)
+
+export const IconTreinamento = (p: IconProps) => (
+  <svg {...base(p)}>
+    <path d="M22 10L12 5 2 10l10 5 10-5z" />
+    <path d="M6 12v5c0 1 2.5 2.5 6 2.5s6-1.5 6-2.5v-5" />
+  </svg>
+)
+
 export const IconGrafico = (p: IconProps) => (
   <svg {...base(p)}>
     <path d="M3 3v18h18" />

@@ -3,11 +3,85 @@ import { Link, useParams } from 'react-router-dom'
 import { useStore } from '../data/store'
 import type { Etapa, Tarefa } from '../types'
 import { statusLabel, statusProjeto, STATUS_TAREFA, CORES_ETAPA } from '../lib/labels'
-import { formatarData, prazoRelativo, estaAtrasada } from '../lib/dates'
+import { formatarData, formatarBRL, hojeIso, prazoRelativo, estaAtrasada } from '../lib/dates'
 import { horasDaTarefa } from '../lib/workload'
-import { AvatarGroup, Badge, EmptyState, Modal } from '../components/ui'
-import { IconPlus } from '../components/icons'
+import { AvatarGroup, Badge, Campo, EmptyState, Modal } from '../components/ui'
+import { IconLixeira, IconPlus } from '../components/icons'
 import TarefaForm from '../components/TarefaForm'
+
+function DespesaForm({ projetoId, onClose }: { projetoId: string; onClose: () => void }) {
+  const { categoriasDespesa, criarDespesa, adicionarCategoria } = useStore()
+  const [categoria, setCategoria] = useState(categoriasDespesa[0] ?? '')
+  const [novaCategoria, setNovaCategoria] = useState('')
+  const [descricao, setDescricao] = useState('')
+  const [valor, setValor] = useState('')
+  const [data, setData] = useState(hojeIso())
+
+  function salvar() {
+    let cat = categoria
+    if (categoria === '__nova__') {
+      cat = novaCategoria.trim()
+      if (!cat) return
+      adicionarCategoria(cat)
+    }
+    const v = Number(valor)
+    if (!cat || !v) return
+    criarDespesa({ projetoId, categoria: cat, descricao: descricao.trim(), valor: v, data })
+    onClose()
+  }
+
+  return (
+    <Modal
+      titulo="Nova despesa"
+      onClose={onClose}
+      footer={
+        <>
+          <button className="btn-secondary" onClick={onClose}>
+            Cancelar
+          </button>
+          <button className="btn-primary" onClick={salvar}>
+            Adicionar
+          </button>
+        </>
+      }
+    >
+      <div className="space-y-4">
+        <Campo label="Categoria *">
+          <select className="input" value={categoria} onChange={(e) => setCategoria(e.target.value)}>
+            {categoriasDespesa.map((c) => (
+              <option key={c} value={c}>
+                {c}
+              </option>
+            ))}
+            <option value="__nova__">+ Nova categoria…</option>
+          </select>
+        </Campo>
+        {categoria === '__nova__' && (
+          <Campo label="Nome da nova categoria *">
+            <input
+              className="input"
+              value={novaCategoria}
+              onChange={(e) => setNovaCategoria(e.target.value)}
+              placeholder="Ex.: Marketing"
+              autoFocus
+            />
+          </Campo>
+        )}
+        <Campo label="Descrição">
+          <input className="input" value={descricao} onChange={(e) => setDescricao(e.target.value)} placeholder="Detalhe da despesa" />
+        </Campo>
+        <div className="grid grid-cols-2 gap-4">
+          <Campo label="Valor (R$) *">
+            <input type="number" min="0" step="10" className="input" value={valor} onChange={(e) => setValor(e.target.value)} placeholder="0" />
+          </Campo>
+          <Campo label="Data">
+            <input type="date" className="input" value={data} onChange={(e) => setData(e.target.value)} />
+          </Campo>
+        </div>
+      </div>
+    </Modal>
+  )
+}
 
 function progresso(tarefas: Tarefa[]) {
   if (tarefas.length === 0) return 0
@@ -120,17 +194,23 @@ function LinhaTarefa({ tarefa, onClick }: { tarefa: Tarefa; onClick: () => void 
 
 export default function ProjetoDetalhe() {
   const { id } = useParams()
-  const { projetos, clientes, etapas, tarefas } = useStore()
+  const { projetos, clientes, etapas, tarefas, despesas, removerDespesa } = useStore()
 
   const projeto = projetos.find((p) => p.id === id)
   const [etapaForm, setEtapaForm] = useState<{ open: boolean; etapa?: Etapa | null }>({ open: false })
   const [tarefaForm, setTarefaForm] = useState<{ open: boolean; tarefa?: Tarefa | null; etapaId?: string }>({ open: false })
+  const [despesaForm, setDespesaForm] = useState(false)
 
   const etapasDoProjeto = useMemo(
     () => etapas.filter((e) => e.projetoId === id).sort((a, b) => a.ordem - b.ordem),
     [etapas, id],
   )
   const tarefasDoProjeto = useMemo(() => tarefas.filter((t) => t.projetoId === id), [tarefas, id])
+  const despesasDoProjeto = useMemo(
+    () => despesas.filter((d) => d.projetoId === id).sort((a, b) => b.data.localeCompare(a.data)),
+    [despesas, id],
+  )
+  const totalDespesas = despesasDoProjeto.reduce((s, d) => s + d.valor, 0)
 
   if (!projeto) {
     return (
@@ -271,6 +351,47 @@ export default function ProjetoDetalhe() {
         </section>
       )}
 
+      {/* Despesas */}
+      <section className="card overflow-hidden">
+        <div className="flex items-center justify-between border-b border-slate-200 px-4 py-3">
+          <div>
+            <span className="font-semibold text-slate-800">Despesas</span>
+            <span className="ml-2 text-sm text-slate-500">
+              Total: <strong className="text-slate-700">{formatarBRL(totalDespesas)}</strong>
+            </span>
+          </div>
+          <button className="btn-ghost text-sm" onClick={() => setDespesaForm(true)}>
+            <IconPlus width={14} height={14} />
+            Nova despesa
+          </button>
+        </div>
+        {despesasDoProjeto.length === 0 ? (
+          <p className="px-4 py-6 text-center text-sm text-slate-400">
+            Nenhuma despesa lançada. Registre alimentação, transporte, hospedagem, materiais, assinaturas ou serviços.
+          </p>
+        ) : (
+          <div className="divide-y divide-slate-100">
+            {despesasDoProjeto.map((d) => (
+              <div key={d.id} className="flex items-center gap-3 px-4 py-2.5">
+                <Badge className="bg-slate-100 text-slate-600">{d.categoria}</Badge>
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-sm text-slate-700">{d.descricao || d.categoria}</p>
+                  <p className="text-xs text-slate-400">{formatarData(d.data)}</p>
+                </div>
+                <span className="shrink-0 text-sm font-medium text-slate-700">{formatarBRL(d.valor)}</span>
+                <button
+                  className="btn-ghost h-8 w-8 !p-0 text-slate-400 hover:text-rose-600"
+                  onClick={() => confirm('Excluir esta despesa?') && removerDespesa(d.id)}
+                  aria-label="Excluir despesa"
+                >
+                  <IconLixeira width={15} height={15} />
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+      </section>
+
       {etapasDoProjeto.length === 0 && semEtapa.length === 0 && (
         <EmptyState
           titulo="Projeto sem etapas ou atividades"
@@ -300,6 +421,7 @@ export default function ProjetoDetalhe() {
           onClose={() => setTarefaForm({ open: false })}
         />
       )}
+      {despesaForm && <DespesaForm projetoId={projeto.id} onClose={() => setDespesaForm(false)} />}
     </div>
   )
 }

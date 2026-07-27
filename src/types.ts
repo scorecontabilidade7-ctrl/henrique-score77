@@ -17,6 +17,23 @@ export type RegimeTributario =
 
 export type StatusProjeto = 'planejado' | 'em_andamento' | 'concluido' | 'pausado'
 
+export type Perfil = 'administrador' | 'gestor' | 'consultor'
+
+/** Page keys that can be granted/revoked per user (view permissions). */
+export type PaginaPermissao =
+  | 'painel'
+  | 'tarefas'
+  | 'projetos'
+  | 'agenda'
+  | 'semana'
+  | 'horas'
+  | 'consultores'
+  | 'financeiro'
+  | 'treinamentos'
+  | 'clientes'
+  | 'equipe'
+  | 'configuracoes'
+
 export interface Membro {
   id: string
   nome: string
@@ -26,6 +43,36 @@ export interface Membro {
   cor: string
   /** Weekly capacity in hours, used by the hours dashboard. */
   cargaHorariaSemanal: number
+  /** Access profile; presets a default set of permissions. */
+  perfil: Perfil
+  /** Pages this user may view. */
+  permissoes: PaginaPermissao[]
+  /** Monthly cost of this team member (salary/encargos) — admin only. */
+  custoMensal: number
+}
+
+export interface Despesa {
+  id: string
+  projetoId: string
+  categoria: string
+  descricao: string
+  valor: number
+  data: string // ISO date (yyyy-mm-dd)
+}
+
+export interface Treinamento {
+  id: string
+  membroId: string
+  tema: string
+  horas: number
+  data: string // ISO date (yyyy-mm-dd)
+}
+
+/** Direct monthly cost of a consulting/accounting area (admin config). */
+export interface CustoArea {
+  id: string
+  area: string
+  valorMensal: number
 }
 
 export interface Cliente {
@@ -127,4 +174,12 @@ export interface DadosApp {
   etapas: Etapa[]
   tarefas: Tarefa[]
   apontamentos: Apontamento[]
+  despesas: Despesa[]
+  treinamentos: Treinamento[]
+  /** User-created expense categories (with suggested defaults). */
+  categoriasDespesa: string[]
+  /** Direct costs per area (admin config). */
+  custosArea: CustoArea[]
+  /** The member whose permissions the app is currently viewed as. */
+  usuarioAtualId: string | null
 }
