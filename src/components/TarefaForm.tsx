@@ -31,6 +31,7 @@ export default function TarefaForm({
     membros,
     projetos,
     etapas,
+    tags,
     criarTarefa,
     atualizarTarefa,
     removerTarefa,
@@ -57,10 +58,13 @@ export default function TarefaForm({
   const [data, setData] = useState(tarefa?.data ?? dataInicial ?? '')
   const [horaInicio, setHoraInicio] = useState(tarefa?.horaInicio ?? '')
   const [horaFim, setHoraFim] = useState(tarefa?.horaFim ?? '')
+  const [tagsIds, setTagsIds] = useState<string[]>(tarefa?.tagsIds ?? [])
 
   const etapasDoProjeto = etapas
     .filter((e) => e.projetoId === projetoId)
     .sort((a, b) => a.ordem - b.ordem)
+
+  const tagReuniao = tags.find((t) => t.ehReuniao)
 
   function toggleResponsavel(id: string) {
     setResponsaveisIds((atual) =>
@@ -68,8 +72,17 @@ export default function TarefaForm({
     )
   }
 
+  function toggleTag(id: string) {
+    setTagsIds((atual) => (atual.includes(id) ? atual.filter((x) => x !== id) : [...atual, id]))
+  }
+
   function salvar() {
     if (!titulo.trim()) return
+    // Automation: meetings always carry the "Reunião" tag.
+    let finalTags = tagsIds
+    if (tipo === 'reuniao' && tagReuniao && !finalTags.includes(tagReuniao.id)) {
+      finalTags = [...finalTags, tagReuniao.id]
+    }
     const payload = {
       titulo: titulo.trim(),
       descricao: descricao.trim(),
@@ -85,10 +98,18 @@ export default function TarefaForm({
       data: data || null,
       horaInicio: data ? horaInicio || null : null,
       horaFim: data ? horaFim || null : null,
+      tagsIds: finalTags,
     }
-    // Editing preserves existing checklists/comments; new tasks start empty.
+    // Editing preserves existing checklists/comments/ata; new tasks start empty.
     if (tarefa) atualizarTarefa(tarefa.id, payload)
-    else criarTarefa({ ...payload, checklists: [], comentarios: [] })
+    else
+      criarTarefa({
+        ...payload,
+        checklists: [],
+        comentarios: [],
+        ata: { participantesEmpresa: '', resumo: '', deveresDeCasa: '', observacoes: '' },
+        gravacaoUrl: '',
+      })
     onClose()
   }
 
@@ -306,6 +327,36 @@ export default function TarefaForm({
             </p>
           )}
         </div>
+
+        {/* Tags */}
+        {tags.length > 0 && (
+          <div>
+            <span className="label">Tags</span>
+            <div className="flex flex-wrap gap-2">
+              {tags.map((tg) => {
+                const sel = tagsIds.includes(tg.id) || (tipo === 'reuniao' && tg.ehReuniao)
+                return (
+                  <button
+                    key={tg.id}
+                    type="button"
+                    onClick={() => toggleTag(tg.id)}
+                    aria-pressed={sel}
+                    className={`badge border ${
+                      sel ? `${tg.cor} border-transparent` : 'border-slate-300 bg-white text-slate-500'
+                    }`}
+                    title={tg.ehReuniao ? 'Tag de reunião (automática em reuniões)' : undefined}
+                  >
+                    {tg.nome}
+                    {tg.ehReuniao && ' ●'}
+                  </button>
+                )
+              })}
+            </div>
+            {tipo === 'reuniao' && tagReuniao && (
+              <p className="mt-1 text-xs text-slate-400">A tag “{tagReuniao.nome}” é aplicada automaticamente.</p>
+            )}
+          </div>
+        )}
       </div>
     </Modal>
   )

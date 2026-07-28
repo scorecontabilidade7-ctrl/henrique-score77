@@ -26,7 +26,7 @@ interface Props {
 }
 
 export default function TarefaDetalhe({ tarefaId, onClose, onEditar }: Props) {
-  const { tarefas, clientes, membros, atualizarTarefa } = useStore()
+  const { tarefas, clientes, membros, tags, atualizarTarefa } = useStore()
   const tarefa = tarefas.find((t) => t.id === tarefaId)
 
   const [novoItem, setNovoItem] = useState<Record<string, string>>({})
@@ -35,9 +35,14 @@ export default function TarefaDetalhe({ tarefaId, onClose, onEditar }: Props) {
   if (!tarefa) return null
   const cliente = clientes.find((c) => c.id === tarefa.clienteId)
   const responsaveis = membros.filter((m) => tarefa.responsaveisIds.includes(m.id))
+  const tagsDaTarefa = tags.filter((t) => tarefa.tagsIds.includes(t.id))
+  const ehReuniao = tarefa.tipo === 'reuniao' || tagsDaTarefa.some((t) => t.ehReuniao)
   const prio = prioridade(tarefa.prioridade)
   const tipo = tipoTarefa(tarefa.tipo)
   const prog = progressoChecklist(tarefa)
+
+  const setAta = (patch: Partial<typeof tarefa.ata>) =>
+    atualizarTarefa(tarefa.id, { ata: { ...tarefa.ata, ...patch } })
 
   const setChecklists = (checklists: Checklist[]) => atualizarTarefa(tarefa.id, { checklists })
 
@@ -125,7 +130,86 @@ export default function TarefaDetalhe({ tarefaId, onClose, onEditar }: Props) {
           </span>
         </div>
 
+        {tagsDaTarefa.length > 0 && (
+          <div className="flex flex-wrap gap-1.5">
+            {tagsDaTarefa.map((tg) => (
+              <Badge key={tg.id} className={tg.cor}>
+                {tg.nome}
+              </Badge>
+            ))}
+          </div>
+        )}
+
         {tarefa.descricao && <p className="text-sm text-slate-600">{tarefa.descricao}</p>}
+
+        {/* Ata da reunião — só para reuniões; participantes SCORE preenchidos automaticamente */}
+        {ehReuniao && (
+          <div className="rounded-lg border border-cyan-200 bg-cyan-50/50 p-4">
+            <h4 className="mb-3 text-sm font-semibold text-slate-700">Ata da reunião</h4>
+            <div className="space-y-3">
+              <div className="rounded-md bg-white p-2.5 text-xs">
+                <p className="font-medium text-slate-500">Participantes — Score (automático)</p>
+                <p className="text-slate-700">
+                  {responsaveis.map((m) => m.nome).join(', ') || '—'}
+                </p>
+              </div>
+              <label className="block">
+                <span className="text-xs font-medium text-slate-600">Participantes — Empresa</span>
+                <input
+                  className="input mt-1"
+                  value={tarefa.ata.participantesEmpresa}
+                  onChange={(e) => setAta({ participantesEmpresa: e.target.value })}
+                  placeholder="Ex.: Sabrina (Core Gym)"
+                />
+              </label>
+              <label className="block">
+                <span className="text-xs font-medium text-slate-600">Resumo das atividades / entregáveis realizados</span>
+                <textarea
+                  className="input mt-1 min-h-[70px] resize-y"
+                  value={tarefa.ata.resumo}
+                  onChange={(e) => setAta({ resumo: e.target.value })}
+                  placeholder="O que foi discutido e entregue na reunião…"
+                />
+              </label>
+              <label className="block">
+                <span className="text-xs font-medium text-slate-600">Atividades para a próxima reunião (deveres de casa)</span>
+                <textarea
+                  className="input mt-1 min-h-[60px] resize-y"
+                  value={tarefa.ata.deveresDeCasa}
+                  onChange={(e) => setAta({ deveresDeCasa: e.target.value })}
+                  placeholder="Próximas ações combinadas…"
+                />
+              </label>
+              <label className="block">
+                <span className="text-xs font-medium text-slate-600">Outras observações relevantes</span>
+                <textarea
+                  className="input mt-1 min-h-[50px] resize-y"
+                  value={tarefa.ata.observacoes}
+                  onChange={(e) => setAta({ observacoes: e.target.value })}
+                />
+              </label>
+              <label className="block">
+                <span className="text-xs font-medium text-slate-600">Link da gravação</span>
+                <input
+                  className="input mt-1"
+                  value={tarefa.gravacaoUrl}
+                  onChange={(e) => atualizarTarefa(tarefa.id, { gravacaoUrl: e.target.value })}
+                  placeholder="Cole o link (Meet/Zoom/Drive)…"
+                />
+                {tarefa.gravacaoUrl && (
+                  <a
+                    href={tarefa.gravacaoUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="mt-1 inline-block text-xs font-medium text-brand-600 hover:underline"
+                  >
+                    ▶ Abrir gravação
+                  </a>
+                )}
+              </label>
+            </div>
+          </div>
+        )}
 
         {/* Checklists */}
         <div className="space-y-4">

@@ -1,12 +1,93 @@
-import { useRef } from 'react'
+import { useRef, useState } from 'react'
 import { useStore } from '../data/store'
 import type { DadosApp } from '../types'
+import { Badge } from '../components/ui'
+import { IconLixeira, IconPlus } from '../components/icons'
+
+const CORES_TAG = [
+  'bg-cyan-100 text-cyan-700',
+  'bg-rose-100 text-rose-700',
+  'bg-emerald-100 text-emerald-700',
+  'bg-indigo-100 text-indigo-700',
+  'bg-amber-100 text-amber-700',
+  'bg-violet-100 text-violet-700',
+  'bg-slate-100 text-slate-600',
+]
+
+function GerenciarTags() {
+  const { tags, criarTag, removerTag } = useStore()
+  const [nome, setNome] = useState('')
+  const [cor, setCor] = useState(CORES_TAG[0])
+  const [ehReuniao, setEhReuniao] = useState(false)
+
+  function adicionar() {
+    if (!nome.trim()) return
+    criarTag({ nome: nome.trim(), cor, ehReuniao })
+    setNome('')
+    setEhReuniao(false)
+  }
+
+  return (
+    <section className="card p-5">
+      <h2 className="font-semibold text-slate-800">Tags</h2>
+      <p className="mt-1 text-sm text-slate-600">
+        Etiquetas para filtrar tarefas na agenda. Marque uma como <strong>Reunião</strong> para habilitar ata e gravação.
+      </p>
+      <div className="mt-3 flex flex-wrap gap-2">
+        {tags.map((tg) => (
+          <span key={tg.id} className="inline-flex items-center gap-1">
+            <Badge className={tg.cor}>
+              {tg.nome}
+              {tg.ehReuniao && ' ●'}
+            </Badge>
+            <button
+              className="text-slate-300 hover:text-rose-600"
+              onClick={() => confirm(`Remover a tag "${tg.nome}"?`) && removerTag(tg.id)}
+              aria-label={`Remover ${tg.nome}`}
+            >
+              <IconLixeira width={13} height={13} />
+            </button>
+          </span>
+        ))}
+        {tags.length === 0 && <span className="text-sm text-slate-400">Nenhuma tag ainda.</span>}
+      </div>
+      <div className="mt-4 flex flex-wrap items-center gap-2 border-t border-slate-100 pt-3">
+        <input
+          className="input max-w-[200px]"
+          placeholder="Nova tag"
+          value={nome}
+          onChange={(e) => setNome(e.target.value)}
+        />
+        <div className="flex items-center gap-1" role="group" aria-label="Cor da tag">
+          {CORES_TAG.map((c) => (
+            <button
+              key={c}
+              type="button"
+              onClick={() => setCor(c)}
+              aria-label={c}
+              className={`h-6 w-6 rounded-full ${c.split(' ')[0]} ${cor === c ? 'ring-2 ring-slate-700 ring-offset-1' : ''}`}
+            />
+          ))}
+        </div>
+        <label className="flex items-center gap-1.5 text-sm text-slate-600">
+          <input type="checkbox" checked={ehReuniao} onChange={(e) => setEhReuniao(e.target.checked)} className="h-4 w-4 rounded border-slate-300 accent-brand-600" />
+          É reunião
+        </label>
+        <button className="btn-secondary" onClick={adicionar}>
+          <IconPlus width={16} height={16} />
+          Adicionar
+        </button>
+      </div>
+    </section>
+  )
+}
 
 export default function Configuracoes() {
   const store = useStore()
   const {
     membros, clientes, projetos, etapas, tarefas, apontamentos,
     despesas, treinamentos, categoriasDespesa, custosArea, usuarioAtualId,
+    tags, itens5w2h, raci,
     resetar, limpar,
   } = store
   const inputRef = useRef<HTMLInputElement>(null)
@@ -15,6 +96,7 @@ export default function Configuracoes() {
     const dados: DadosApp = {
       membros, clientes, projetos, etapas, tarefas, apontamentos,
       despesas, treinamentos, categoriasDespesa, custosArea, usuarioAtualId,
+      tags, itens5w2h, raci,
     }
     const blob = new Blob([JSON.stringify(dados, null, 2)], { type: 'application/json' })
     const url = URL.createObjectURL(blob)
@@ -101,6 +183,8 @@ export default function Configuracoes() {
           />
         </div>
       </section>
+
+      <GerenciarTags />
 
       <section className="card border-rose-200 p-5">
         <h2 className="font-semibold text-slate-800">Zona de risco</h2>

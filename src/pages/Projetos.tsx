@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
-import { useStore } from '../data/store'
+import { TAP_VAZIO, useStore } from '../data/store'
 import type { Projeto, StatusProjeto } from '../types'
 import { STATUS_PROJETO, statusProjeto } from '../lib/labels'
 import { formatarData } from '../lib/dates'
@@ -27,7 +27,7 @@ function ProjetoForm({ projeto, onClose }: { projeto?: Projeto | null; onClose: 
       fim: fim || null,
     }
     if (projeto) atualizarProjeto(projeto.id, payload)
-    else criarProjeto(payload)
+    else criarProjeto({ ...payload, tap: TAP_VAZIO })
     onClose()
   }
 

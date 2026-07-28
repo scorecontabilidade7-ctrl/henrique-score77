@@ -14,13 +14,22 @@ import type {
   DadosApp,
   Despesa,
   Etapa,
+  Item5W2H,
+  ItemRaci,
   Membro,
   Projeto,
+  TAP,
+  Tag,
   Tarefa,
   Treinamento,
 } from '../types'
 import { dadosIniciais } from './seed'
 import { PERMISSOES_PADRAO } from '../lib/permissoes'
+
+export const TAP_VAZIO: TAP = {
+  sponsor: '', gerente: '', orcamento: '', justificativa: '', objetivosSmart: '',
+  premissas: '', restricoes: '', entregas: '', criteriosSucesso: '', riscos: '',
+}
 
 // Coerce possibly-incomplete records (older data / imports) into the current
 // shape so the UI can rely on arrays always being present.
@@ -31,7 +40,14 @@ function normTarefa(t: Partial<Tarefa>): Tarefa {
     checklists: t.checklists ?? [],
     comentarios: t.comentarios ?? [],
     estimativaHoras: t.estimativaHoras ?? 0,
+    tagsIds: t.tagsIds ?? [],
+    ata: { participantesEmpresa: '', resumo: '', deveresDeCasa: '', observacoes: '', ...(t.ata ?? {}) },
+    gravacaoUrl: t.gravacaoUrl ?? '',
   }
+}
+
+function normProjeto(p: Partial<Projeto>): Projeto {
+  return { ...(p as Projeto), tap: { ...TAP_VAZIO, ...(p.tap ?? {}) } }
 }
 
 function normCliente(c: Partial<Cliente>): Cliente {
@@ -63,7 +79,7 @@ function normalizar(d: Partial<DadosApp>): DadosApp {
   return {
     membros,
     clientes: (d.clientes ?? []).map(normCliente),
-    projetos: d.projetos ?? [],
+    projetos: (d.projetos ?? []).map(normProjeto),
     etapas: d.etapas ?? [],
     tarefas: (d.tarefas ?? []).map(normTarefa),
     apontamentos: d.apontamentos ?? [],
@@ -72,6 +88,9 @@ function normalizar(d: Partial<DadosApp>): DadosApp {
     categoriasDespesa: d.categoriasDespesa ?? [...CATEGORIAS_PADRAO],
     custosArea: d.custosArea ?? [],
     usuarioAtualId: d.usuarioAtualId ?? membros[0]?.id ?? null,
+    tags: d.tags ?? [],
+    itens5w2h: d.itens5w2h ?? [],
+    raci: d.raci ?? [],
   }
 }
 
@@ -149,6 +168,18 @@ interface StoreContextValue extends DadosApp {
   removerCustoArea: (id: string) => void
   // Usuário atual (visão/permissões)
   definirUsuarioAtual: (id: string) => void
+  // Tags
+  criarTag: (t: Omit<Tag, 'id'>) => void
+  atualizarTag: (id: string, patch: Partial<Tag>) => void
+  removerTag: (id: string) => void
+  // 5W2H
+  criarItem5w2h: (i: Omit<Item5W2H, 'id'>) => void
+  atualizarItem5w2h: (id: string, patch: Partial<Item5W2H>) => void
+  removerItem5w2h: (id: string) => void
+  // RACI
+  criarItemRaci: (i: Omit<ItemRaci, 'id'>) => void
+  atualizarItemRaci: (id: string, patch: Partial<ItemRaci>) => void
+  removerItemRaci: (id: string) => void
   // Utilidades
   substituirTudo: (dados: DadosApp) => void
   resetar: () => void
@@ -169,6 +200,9 @@ const vazio: DadosApp = {
   categoriasDespesa: [...CATEGORIAS_PADRAO],
   custosArea: [],
   usuarioAtualId: null,
+  tags: [],
+  itens5w2h: [],
+  raci: [],
 }
 
 export function StoreProvider({ children }: { children: ReactNode }) {
@@ -273,6 +307,8 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       projetos: d.projetos.filter((p) => p.id !== id),
       etapas: d.etapas.filter((e) => e.projetoId !== id),
       despesas: d.despesas.filter((x) => x.projetoId !== id),
+      itens5w2h: d.itens5w2h.filter((i) => i.projetoId !== id),
+      raci: d.raci.filter((i) => i.projetoId !== id),
       tarefas: d.tarefas.map((t) =>
         t.projetoId === id ? { ...t, projetoId: null, etapaId: null } : t,
       ),
@@ -359,6 +395,40 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     setDados((d) => ({ ...d, usuarioAtualId: id }))
   }, [])
 
+  const criarTag = useCallback((t: Omit<Tag, 'id'>) => {
+    setDados((d) => ({ ...d, tags: [...d.tags, { ...t, id: novoId() }] }))
+  }, [])
+  const atualizarTag = useCallback((id: string, patch: Partial<Tag>) => {
+    setDados((d) => ({ ...d, tags: d.tags.map((t) => (t.id === id ? { ...t, ...patch } : t)) }))
+  }, [])
+  const removerTag = useCallback((id: string) => {
+    setDados((d) => ({
+      ...d,
+      tags: d.tags.filter((t) => t.id !== id),
+      tarefas: d.tarefas.map((t) => ({ ...t, tagsIds: t.tagsIds.filter((x) => x !== id) })),
+    }))
+  }, [])
+
+  const criarItem5w2h = useCallback((i: Omit<Item5W2H, 'id'>) => {
+    setDados((d) => ({ ...d, itens5w2h: [...d.itens5w2h, { ...i, id: novoId() }] }))
+  }, [])
+  const atualizarItem5w2h = useCallback((id: string, patch: Partial<Item5W2H>) => {
+    setDados((d) => ({ ...d, itens5w2h: d.itens5w2h.map((i) => (i.id === id ? { ...i, ...patch } : i)) }))
+  }, [])
+  const removerItem5w2h = useCallback((id: string) => {
+    setDados((d) => ({ ...d, itens5w2h: d.itens5w2h.filter((i) => i.id !== id) }))
+  }, [])
+
+  const criarItemRaci = useCallback((i: Omit<ItemRaci, 'id'>) => {
+    setDados((d) => ({ ...d, raci: [...d.raci, { ...i, id: novoId() }] }))
+  }, [])
+  const atualizarItemRaci = useCallback((id: string, patch: Partial<ItemRaci>) => {
+    setDados((d) => ({ ...d, raci: d.raci.map((i) => (i.id === id ? { ...i, ...patch } : i)) }))
+  }, [])
+  const removerItemRaci = useCallback((id: string) => {
+    setDados((d) => ({ ...d, raci: d.raci.filter((i) => i.id !== id) }))
+  }, [])
+
   // Replace the whole dataset at once, preserving ids (used by backup import).
   const substituirTudo = useCallback((novos: DadosApp) => {
     setDados(normalizar(novos))
@@ -396,6 +466,15 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       atualizarCustoArea,
       removerCustoArea,
       definirUsuarioAtual,
+      criarTag,
+      atualizarTag,
+      removerTag,
+      criarItem5w2h,
+      atualizarItem5w2h,
+      removerItem5w2h,
+      criarItemRaci,
+      atualizarItemRaci,
+      removerItemRaci,
       substituirTudo,
       resetar,
       limpar,
@@ -428,6 +507,15 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       atualizarCustoArea,
       removerCustoArea,
       definirUsuarioAtual,
+      criarTag,
+      atualizarTag,
+      removerTag,
+      criarItem5w2h,
+      atualizarItem5w2h,
+      removerItem5w2h,
+      criarItemRaci,
+      atualizarItemRaci,
+      removerItemRaci,
       substituirTudo,
       resetar,
       limpar,

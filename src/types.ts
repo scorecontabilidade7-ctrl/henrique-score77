@@ -91,6 +91,20 @@ export interface Cliente {
   segmento: string
 }
 
+/** PMBOK — Termo de Abertura do Projeto (TAP). All free text. */
+export interface TAP {
+  sponsor: string
+  gerente: string
+  orcamento: string
+  justificativa: string
+  objetivosSmart: string
+  premissas: string
+  restricoes: string
+  entregas: string
+  criteriosSucesso: string
+  riscos: string
+}
+
 export interface Projeto {
   id: string
   nome: string
@@ -99,6 +113,45 @@ export interface Projeto {
   status: StatusProjeto
   inicio: string // ISO date (yyyy-mm-dd)
   fim: string | null
+  /** PMBOK project charter (Termo de Abertura). */
+  tap: TAP
+}
+
+/** 5W2H item with GUT prioritization (What/Why/Where/Who/When/How/How much). */
+export interface Item5W2H {
+  id: string
+  projetoId: string
+  oQue: string
+  porQue: string
+  onde: string
+  quemId: string | null // membro
+  quando: string // ISO date or free text
+  como: string
+  quanto: number
+  g: number // Gravidade 1-5
+  u: number // Urgência 1-5
+  t: number // Tendência 1-5
+  status: StatusTarefa
+}
+
+export type PapelRaci = 'R' | 'A' | 'C' | 'I' | ''
+
+/** A RACI row: an activity and each member's role on it. */
+export interface ItemRaci {
+  id: string
+  projetoId: string
+  atividade: string
+  /** membroId -> R/A/C/I */
+  papeis: Record<string, PapelRaci>
+}
+
+export interface Tag {
+  id: string
+  nome: string
+  /** Tailwind badge classes, e.g. "bg-rose-100 text-rose-700". */
+  cor: string
+  /** Marks the special "meeting" tag (enables ata/recording). */
+  ehReuniao: boolean
 }
 
 /** A stage/phase of a project (e.g. "Análise Inicial"). Tasks belong to a stage. */
@@ -131,6 +184,18 @@ export interface Comentario {
   autorId: string | null
 }
 
+/** Meeting minutes (ata), based on the Score meeting template. */
+export interface Ata {
+  /** Client-side participants (Score side comes from the task's responsáveis). */
+  participantesEmpresa: string
+  /** Resumo das atividades/entregáveis realizados. */
+  resumo: string
+  /** Atividades para a próxima reunião (deveres de casa). */
+  deveresDeCasa: string
+  /** Outras observações relevantes. */
+  observacoes: string
+}
+
 export interface Tarefa {
   id: string
   titulo: string
@@ -154,6 +219,12 @@ export interface Tarefa {
   checklists: Checklist[]
   /** Comment/activity feed on the card. */
   comentarios: Comentario[]
+  /** Tags for filtering (one may be the meeting tag). */
+  tagsIds: string[]
+  /** Meeting minutes (ata) — used when the task is a meeting. */
+  ata: Ata
+  /** Link to the meeting recording. */
+  gravacaoUrl: string
   criadaEm: string // ISO datetime
 }
 
@@ -182,4 +253,10 @@ export interface DadosApp {
   custosArea: CustoArea[]
   /** The member whose permissions the app is currently viewed as. */
   usuarioAtualId: string | null
+  /** Task tags (filtering). */
+  tags: Tag[]
+  /** 5W2H items (per project). */
+  itens5w2h: Item5W2H[]
+  /** RACI rows (per project). */
+  raci: ItemRaci[]
 }

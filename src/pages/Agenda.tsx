@@ -13,16 +13,20 @@ function horaLabel(t: Tarefa) {
 }
 
 export default function Agenda() {
-  const { membros, tarefas, clientes } = useStore()
+  const { membros, tarefas, clientes, tags } = useStore()
   const [base, setBase] = useState(() => new Date())
   const [filtroMembro, setFiltroMembro] = useState('')
+  const [filtroTag, setFiltroTag] = useState('')
   const [form, setForm] = useState<{ open: boolean; tarefa?: Tarefa | null; data?: string }>({ open: false })
 
   const dias = useMemo(() => diasDaSemana(base), [base])
   const hoje = hojeIso()
 
   // Only scheduled items (those with a date) show on the calendar.
-  const agendados = useMemo(() => tarefas.filter((t) => t.data), [tarefas])
+  const agendados = useMemo(
+    () => tarefas.filter((t) => t.data && (!filtroTag || t.tagsIds.includes(filtroTag))),
+    [tarefas, filtroTag],
+  )
 
   const membrosVisiveis = filtroMembro ? membros.filter((m) => m.id === filtroMembro) : membros
 
@@ -75,7 +79,19 @@ export default function Agenda() {
         </div>
         <span className="text-sm font-medium capitalize text-slate-700">{nomeMesAno(parseData(dias[0]))}</span>
         <select
-          className="input ml-auto max-w-[220px]"
+          className="input ml-auto max-w-[180px]"
+          value={filtroTag}
+          onChange={(e) => setFiltroTag(e.target.value)}
+        >
+          <option value="">Todas as tags</option>
+          {tags.map((tg) => (
+            <option key={tg.id} value={tg.id}>
+              {tg.nome}
+            </option>
+          ))}
+        </select>
+        <select
+          className="input max-w-[180px]"
           value={filtroMembro}
           onChange={(e) => setFiltroMembro(e.target.value)}
         >
