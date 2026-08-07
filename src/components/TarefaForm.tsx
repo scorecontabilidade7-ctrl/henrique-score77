@@ -46,7 +46,8 @@ export default function TarefaForm({
   const [responsaveisIds, setResponsaveisIds] = useState<string[]>(
     tarefa?.responsaveisIds ?? [],
   )
-  const [tipo, setTipo] = useState<TipoTarefa>(tarefa?.tipo ?? tipoInicial ?? 'contabil')
+  const [tipo, setTipo] = useState<TipoTarefa>(tarefa?.tipo ?? tipoInicial ?? 'tarefa')
+  const [orientacao, setOrientacao] = useState(tarefa?.orientacao ?? '')
   const [prioridade, setPrioridade] = useState<Prioridade>(tarefa?.prioridade ?? 'media')
   const [status, setStatus] = useState<StatusTarefa>(
     tarefa?.status ?? statusInicial ?? 'a_fazer',
@@ -91,6 +92,7 @@ export default function TarefaForm({
       etapaId: projetoId ? etapaId || null : null,
       responsaveisIds,
       tipo,
+      orientacao: tipo === 'tarefa' ? orientacao.trim() : '',
       prioridade,
       status,
       prazo: prazo || null,
@@ -109,6 +111,7 @@ export default function TarefaForm({
         comentarios: [],
         ata: { participantesEmpresa: '', resumo: '', deveresDeCasa: '', observacoes: '' },
         gravacaoUrl: '',
+        gravacaoAudio: '',
       })
     onClose()
   }
@@ -242,6 +245,9 @@ export default function TarefaForm({
                 </option>
               ))}
             </select>
+            <p className="mt-1 text-[11px] leading-tight text-slate-400">
+              {TIPOS_TAREFA.find((t) => t.id === tipo)?.descricao}
+            </p>
           </Campo>
           <Campo label="Prioridade">
             <select
@@ -270,6 +276,40 @@ export default function TarefaForm({
             </select>
           </Campo>
         </div>
+
+        {/* Tarefa: como a demanda deve ser feita (orientação/briefing) */}
+        {tipo === 'tarefa' && (
+          <Campo label="Como deve ser feita a demanda">
+            <textarea
+              className="input min-h-[80px] resize-y"
+              value={orientacao}
+              onChange={(e) => setOrientacao(e.target.value)}
+              placeholder="Explique o passo a passo, critérios e o que se espera da entrega…"
+            />
+          </Campo>
+        )}
+
+        {/* Lembrete: vinculado ao responsável, aparece como notificação dele */}
+        {tipo === 'lembrete' && (
+          <div className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800">
+            <p className="font-medium">Lembrete pessoal</p>
+            <p className="text-amber-700">
+              {responsaveisIds.length === 0
+                ? 'Escolha o responsável acima — ele receberá este lembrete nas notificações.'
+                : 'Aparecerá nas notificações do(s) responsável(is) selecionado(s) acima.'}
+            </p>
+          </div>
+        )}
+
+        {/* Reunião: a ata e o gravador de voz ficam no detalhe do cartão */}
+        {tipo === 'reuniao' && (
+          <div className="rounded-lg border border-cyan-200 bg-cyan-50 p-3 text-sm text-cyan-800">
+            <p className="font-medium">Reunião</p>
+            <p className="text-cyan-700">
+              Após salvar, abra o cartão para gravar o áudio pelo microfone e preencher a ata.
+            </p>
+          </div>
+        )}
 
         <div className="grid grid-cols-2 gap-4">
           <Campo label="Prazo">

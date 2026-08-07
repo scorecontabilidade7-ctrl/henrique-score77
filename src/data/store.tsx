@@ -34,15 +34,22 @@ export const TAP_VAZIO: TAP = {
 // Coerce possibly-incomplete records (older data / imports) into the current
 // shape so the UI can rely on arrays always being present.
 function normTarefa(t: Partial<Tarefa>): Tarefa {
+  // Older data used business-category types (contábil/consultoria/avulsa).
+  // The type now means the item's nature: tarefa / reuniao / lembrete.
+  const tipo =
+    t.tipo === 'reuniao' ? 'reuniao' : t.tipo === 'lembrete' ? 'lembrete' : 'tarefa'
   return {
     ...(t as Tarefa),
+    tipo,
     responsaveisIds: t.responsaveisIds ?? [],
     checklists: t.checklists ?? [],
     comentarios: t.comentarios ?? [],
     estimativaHoras: t.estimativaHoras ?? 0,
     tagsIds: t.tagsIds ?? [],
+    orientacao: t.orientacao ?? '',
     ata: { participantesEmpresa: '', resumo: '', deveresDeCasa: '', observacoes: '', ...(t.ata ?? {}) },
     gravacaoUrl: t.gravacaoUrl ?? '',
+    gravacaoAudio: t.gravacaoAudio ?? '',
   }
 }
 

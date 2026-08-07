@@ -11,13 +11,15 @@ import {
   IconKanban,
   IconProjetos,
   IconRelogio,
+  IconSino,
   IconTreinamento,
 } from './icons'
-import type { ComponentType, SVGProps } from 'react'
+import { useState, type ComponentType, type SVGProps } from 'react'
 import type { PaginaPermissao } from '../types'
 import { useStore } from '../data/store'
 import { useUsuarioAtual } from '../lib/acesso'
 import { perfilLabel } from '../lib/permissoes'
+import { formatarData } from '../lib/dates'
 import { Avatar } from './ui'
 
 interface Item {
@@ -90,6 +92,91 @@ function Marca() {
   )
 }
 
+/** Bell showing the current user's pending reminders (lembretes) as notifications. */
+function Notificacoes({ align = 'right' }: { align?: 'left' | 'right' }) {
+  const { tarefas, clientes, atualizarTarefa } = useStore()
+  const usuario = useUsuarioAtual()
+  const [aberto, setAberto] = useState(false)
+  if (!usuario) return null
+
+  const lembretes = tarefas
+    .filter(
+      (t) =>
+        t.tipo === 'lembrete' &&
+        t.status !== 'concluido' &&
+        t.responsaveisIds.includes(usuario.id),
+    )
+    .sort((a, b) => (a.data ?? a.prazo ?? '').localeCompare(b.data ?? b.prazo ?? ''))
+
+  const total = lembretes.length
+  const clienteNome = (id: string | null) => clientes.find((c) => c.id === id)?.nome
+
+  return (
+    <div className="relative">
+      <button
+        type="button"
+        onClick={() => setAberto((v) => !v)}
+        className="relative flex h-9 w-9 items-center justify-center rounded-lg text-slate-500 hover:bg-slate-100"
+        aria-label={`Notificações (${total})`}
+        title="Lembretes"
+      >
+        <IconSino width={20} height={20} />
+        {total > 0 && (
+          <span className="absolute -right-0.5 -top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-rose-600 px-1 text-[10px] font-bold text-white">
+            {total}
+          </span>
+        )}
+      </button>
+
+      {aberto && (
+        <>
+          <div className="fixed inset-0 z-40" onClick={() => setAberto(false)} />
+          <div
+            className={`absolute z-50 mt-2 w-72 rounded-xl border border-slate-200 bg-white p-2 shadow-lg ${
+              align === 'left' ? 'left-0' : 'right-0'
+            }`}
+          >
+            <p className="px-2 py-1 text-xs font-semibold uppercase tracking-wide text-slate-400">
+              Lembretes de {usuario.nome.split(' ')[0]}
+            </p>
+            {total === 0 && (
+              <p className="px-2 py-3 text-sm text-slate-400">Nenhum lembrete pendente. 🎉</p>
+            )}
+            <div className="max-h-80 overflow-y-auto scrollbar-thin">
+              {lembretes.map((t) => (
+                <div
+                  key={t.id}
+                  className="flex items-start gap-2 rounded-lg px-2 py-2 hover:bg-slate-50"
+                >
+                  <span className="mt-0.5 text-amber-500">
+                    <IconSino width={16} height={16} />
+                  </span>
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-sm font-medium text-slate-700">{t.titulo}</p>
+                    <p className="text-xs text-slate-400">
+                      {[clienteNome(t.clienteId), t.data && formatarData(t.data), t.horaInicio]
+                        .filter(Boolean)
+                        .join(' · ') || 'Sem data'}
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => atualizarTarefa(t.id, { status: 'concluido' })}
+                    className="shrink-0 rounded-md px-1.5 py-0.5 text-[11px] font-medium text-brand-600 hover:bg-brand-50"
+                    title="Marcar como concluído"
+                  >
+                    Concluir
+                  </button>
+                </div>
+              ))}
+            </div>
+          </div>
+        </>
+      )}
+    </div>
+  )
+}
+
 /** Lets you switch which user (and thus permission set) the app is viewed as. */
 function SeletorUsuario() {
   const { membros, definirUsuarioAtual } = useStore()
@@ -129,7 +216,10 @@ export default function Layout() {
     <div className="min-h-screen lg:flex">
       {/* Sidebar - desktop */}
       <aside className="hidden w-64 shrink-0 border-r border-slate-200 bg-white p-4 lg:flex lg:flex-col lg:gap-6">
-        <Marca />
+        <div className="flex items-center justify-between">
+          <Marca />
+          <Notificacoes align="left" />
+        </div>
         <NavItens />
         <div className="mt-auto">
           <SeletorUsuario />
@@ -140,8 +230,11 @@ export default function Layout() {
       <header className="sticky top-0 z-30 border-b border-slate-200 bg-white lg:hidden">
         <div className="flex items-center justify-between gap-2 p-3">
           <Marca />
-          <div className="w-40">
-            <SeletorUsuario />
+          <div className="flex items-center gap-2">
+            <Notificacoes />
+            <div className="w-40">
+              <SeletorUsuario />
+            </div>
           </div>
         </div>
         <div className="overflow-x-auto border-t border-slate-100 p-2 scrollbar-thin">

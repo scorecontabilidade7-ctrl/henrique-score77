@@ -5,8 +5,11 @@ export type StatusTarefa = 'a_fazer' | 'em_andamento' | 'em_revisao' | 'concluid
 
 export type Prioridade = 'baixa' | 'media' | 'alta' | 'urgente'
 
-// "reuniao" (meeting) is scheduled on the calendar and can have several people.
-export type TipoTarefa = 'contabil' | 'consultoria' | 'avulsa' | 'reuniao'
+// The kind of item, which drives the form/behaviour:
+// - "tarefa"   → a work demand (has an orientation field on how to do it)
+// - "reuniao"  → scheduled meeting; enables voice recorder + ata (minutes)
+// - "lembrete" → a reminder tied to the responsible, shown as a notification
+export type TipoTarefa = 'tarefa' | 'reuniao' | 'lembrete'
 
 export type RegimeTributario =
   | 'simples_nacional'
@@ -206,6 +209,8 @@ export interface Tarefa {
   /** One or more people responsible. Meetings appear in every assignee's agenda. */
   responsaveisIds: string[]
   tipo: TipoTarefa
+  /** For "tarefa": how the demand should be carried out (orientation/briefing). */
+  orientacao: string
   prioridade: Prioridade
   status: StatusTarefa
   prazo: string | null // ISO date (yyyy-mm-dd)
@@ -223,8 +228,10 @@ export interface Tarefa {
   tagsIds: string[]
   /** Meeting minutes (ata) — used when the task is a meeting. */
   ata: Ata
-  /** Link to the meeting recording. */
+  /** External link to the meeting recording (Meet/Zoom/Drive). */
   gravacaoUrl: string
+  /** In-browser audio recording of the meeting, stored as a data: URL. */
+  gravacaoAudio: string
   criadaEm: string // ISO datetime
 }
 

@@ -31,15 +31,34 @@ export const PRIORIDADES: {
 export const prioridade = (p: Prioridade) =>
   PRIORIDADES.find((x) => x.id === p) ?? PRIORIDADES[0]
 
-export const TIPOS_TAREFA: { id: TipoTarefa; label: string; badge: string }[] = [
-  { id: 'contabil', label: 'Contábil', badge: 'bg-indigo-100 text-indigo-700' },
-  { id: 'consultoria', label: 'Consultoria', badge: 'bg-violet-100 text-violet-700' },
-  { id: 'reuniao', label: 'Reunião', badge: 'bg-cyan-100 text-cyan-700' },
-  { id: 'avulsa', label: 'Avulsa', badge: 'bg-slate-100 text-slate-600' },
+export const TIPOS_TAREFA: {
+  id: TipoTarefa
+  label: string
+  badge: string
+  descricao: string
+}[] = [
+  {
+    id: 'tarefa',
+    label: 'Tarefa',
+    badge: 'bg-violet-100 text-violet-700',
+    descricao: 'Demanda de trabalho — descreva como deve ser feita.',
+  },
+  {
+    id: 'reuniao',
+    label: 'Reunião',
+    badge: 'bg-cyan-100 text-cyan-700',
+    descricao: 'Habilita gravador de voz e ata da reunião.',
+  },
+  {
+    id: 'lembrete',
+    label: 'Lembrete',
+    badge: 'bg-amber-100 text-amber-700',
+    descricao: 'Aviso para o responsável — aparece nas notificações dele.',
+  },
 ]
 
 export const tipoTarefa = (t: TipoTarefa) =>
-  TIPOS_TAREFA.find((x) => x.id === t) ?? TIPOS_TAREFA[2]
+  TIPOS_TAREFA.find((x) => x.id === t) ?? TIPOS_TAREFA[0]
 
 export const REGIMES: { id: RegimeTributario; label: string }[] = [
   { id: 'simples_nacional', label: 'Simples Nacional' },

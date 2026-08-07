@@ -5,7 +5,8 @@ import { prioridade, statusLabel, tipoTarefa } from '../lib/labels'
 import { formatarData } from '../lib/dates'
 import { progressoChecklist } from '../lib/workload'
 import { Avatar, AvatarGroup, Badge, Modal } from './ui'
-import { IconLixeira, IconPlus } from './icons'
+import { IconLixeira, IconPlus, IconSino } from './icons'
+import GravadorVoz from './GravadorVoz'
 
 const novoId = () => `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`
 
@@ -36,7 +37,9 @@ export default function TarefaDetalhe({ tarefaId, onClose, onEditar }: Props) {
   const cliente = clientes.find((c) => c.id === tarefa.clienteId)
   const responsaveis = membros.filter((m) => tarefa.responsaveisIds.includes(m.id))
   const tagsDaTarefa = tags.filter((t) => tarefa.tagsIds.includes(t.id))
-  const ehReuniao = tarefa.tipo === 'reuniao' || tagsDaTarefa.some((t) => t.ehReuniao)
+  // Ata + gravador aparecem SOMENTE quando o tipo é reunião.
+  const ehReuniao = tarefa.tipo === 'reuniao'
+  const ehLembrete = tarefa.tipo === 'lembrete'
   const prio = prioridade(tarefa.prioridade)
   const tipo = tipoTarefa(tarefa.tipo)
   const prog = progressoChecklist(tarefa)
@@ -142,11 +145,45 @@ export default function TarefaDetalhe({ tarefaId, onClose, onEditar }: Props) {
 
         {tarefa.descricao && <p className="text-sm text-slate-600">{tarefa.descricao}</p>}
 
+        {/* Lembrete — vinculado ao responsável, aparece nas notificações dele */}
+        {ehLembrete && (
+          <div className="flex items-start gap-2 rounded-lg border border-amber-200 bg-amber-50 p-3">
+            <span className="mt-0.5 text-amber-600">
+              <IconSino width={18} height={18} />
+            </span>
+            <div className="text-sm">
+              <p className="font-medium text-amber-800">Lembrete</p>
+              <p className="text-amber-700">
+                Aparece como notificação para{' '}
+                {responsaveis.length ? responsaveis.map((m) => m.nome.split(' ')[0]).join(', ') : 'o responsável'}
+                {tarefa.data && ` · ${formatarData(tarefa.data)}`}
+                {tarefa.horaInicio && ` às ${tarefa.horaInicio}`}.
+              </p>
+            </div>
+          </div>
+        )}
+
+        {/* Tarefa — orientação de como a demanda deve ser feita */}
+        {tarefa.tipo === 'tarefa' && tarefa.orientacao && (
+          <div className="rounded-lg border border-violet-200 bg-violet-50/60 p-3">
+            <p className="mb-1 text-xs font-semibold text-violet-700">Como fazer a demanda</p>
+            <p className="whitespace-pre-line text-sm text-slate-700">{tarefa.orientacao}</p>
+          </div>
+        )}
+
         {/* Ata da reunião — só para reuniões; participantes SCORE preenchidos automaticamente */}
         {ehReuniao && (
           <div className="rounded-lg border border-cyan-200 bg-cyan-50/50 p-4">
             <h4 className="mb-3 text-sm font-semibold text-slate-700">Ata da reunião</h4>
             <div className="space-y-3">
+              {/* Gravador de voz — usa o microfone do computador */}
+              <div className="rounded-md bg-white p-2.5">
+                <p className="mb-2 text-xs font-medium text-slate-500">Gravação da reunião</p>
+                <GravadorVoz
+                  value={tarefa.gravacaoAudio}
+                  onChange={(dataUrl) => atualizarTarefa(tarefa.id, { gravacaoAudio: dataUrl })}
+                />
+              </div>
               <div className="rounded-md bg-white p-2.5 text-xs">
                 <p className="font-medium text-slate-500">Participantes — Score (automático)</p>
                 <p className="text-slate-700">
