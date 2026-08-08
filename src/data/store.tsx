@@ -10,6 +10,7 @@ import {
 import type {
   Apontamento,
   Cliente,
+  Compartilhamento,
   CustoArea,
   DadosApp,
   Despesa,
@@ -18,6 +19,7 @@ import type {
   ItemRaci,
   Membro,
   Projeto,
+  Recorrencia,
   TAP,
   Tag,
   Tarefa,
@@ -54,7 +56,16 @@ function normTarefa(t: Partial<Tarefa>): Tarefa {
 }
 
 function normProjeto(p: Partial<Projeto>): Projeto {
-  return { ...(p as Projeto), tap: { ...TAP_VAZIO, ...(p.tap ?? {}) } }
+  return {
+    ...(p as Projeto),
+    tap: { ...TAP_VAZIO, ...(p.tap ?? {}) },
+    equipeIds: p.equipeIds ?? [],
+    envolvidos: p.envolvidos ?? [],
+  }
+}
+
+function normEtapa(e: Partial<Etapa>): Etapa {
+  return { ...(e as Etapa), roteiro: e.roteiro ?? [] }
 }
 
 function normCliente(c: Partial<Cliente>): Cliente {
@@ -87,7 +98,7 @@ function normalizar(d: Partial<DadosApp>): DadosApp {
     membros,
     clientes: (d.clientes ?? []).map(normCliente),
     projetos: (d.projetos ?? []).map(normProjeto),
-    etapas: d.etapas ?? [],
+    etapas: (d.etapas ?? []).map(normEtapa),
     tarefas: (d.tarefas ?? []).map(normTarefa),
     apontamentos: d.apontamentos ?? [],
     despesas: d.despesas ?? [],
@@ -98,6 +109,8 @@ function normalizar(d: Partial<DadosApp>): DadosApp {
     tags: d.tags ?? [],
     itens5w2h: d.itens5w2h ?? [],
     raci: d.raci ?? [],
+    compartilhamentos: d.compartilhamentos ?? [],
+    recorrencias: d.recorrencias ?? [],
   }
 }
 
@@ -187,6 +200,14 @@ interface StoreContextValue extends DadosApp {
   criarItemRaci: (i: Omit<ItemRaci, 'id'>) => void
   atualizarItemRaci: (id: string, patch: Partial<ItemRaci>) => void
   removerItemRaci: (id: string) => void
+  // Compartilhamentos
+  criarCompartilhamento: (c: Omit<Compartilhamento, 'id' | 'criadoEm'>) => string
+  atualizarCompartilhamento: (id: string, patch: Partial<Compartilhamento>) => void
+  removerCompartilhamento: (id: string) => void
+  // Recorrências
+  criarRecorrencia: (r: Omit<Recorrencia, 'id' | 'criadaEm'>) => void
+  atualizarRecorrencia: (id: string, patch: Partial<Recorrencia>) => void
+  removerRecorrencia: (id: string) => void
   // Utilidades
   substituirTudo: (dados: DadosApp) => void
   resetar: () => void
@@ -210,6 +231,8 @@ const vazio: DadosApp = {
   tags: [],
   itens5w2h: [],
   raci: [],
+  compartilhamentos: [],
+  recorrencias: [],
 }
 
 export function StoreProvider({ children }: { children: ReactNode }) {
@@ -294,6 +317,14 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         responsavelId: c.responsavelId === id ? null : c.responsavelId,
         assistentesIds: c.assistentesIds.filter((a) => a !== id),
       })),
+      projetos: d.projetos.map((p) => ({
+        ...p,
+        equipeIds: p.equipeIds.filter((e) => e !== id),
+      })),
+      recorrencias: d.recorrencias.map((r) => ({
+        ...r,
+        responsaveisIds: r.responsaveisIds.filter((x) => x !== id),
+      })),
     }))
   }, [])
 
@@ -316,6 +347,8 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       despesas: d.despesas.filter((x) => x.projetoId !== id),
       itens5w2h: d.itens5w2h.filter((i) => i.projetoId !== id),
       raci: d.raci.filter((i) => i.projetoId !== id),
+      compartilhamentos: d.compartilhamentos.filter((c) => c.projetoId !== id),
+      recorrencias: d.recorrencias.filter((r) => r.projetoId !== id),
       tarefas: d.tarefas.map((t) =>
         t.projetoId === id ? { ...t, projetoId: null, etapaId: null } : t,
       ),
@@ -339,6 +372,9 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       etapas: d.etapas.filter((e) => e.id !== id),
       tarefas: d.tarefas.map((t) =>
         t.etapaId === id ? { ...t, etapaId: null } : t,
+      ),
+      recorrencias: d.recorrencias.map((r) =>
+        r.etapaId === id ? { ...r, etapaId: null } : r,
       ),
     }))
   }, [])
@@ -436,6 +472,40 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     setDados((d) => ({ ...d, raci: d.raci.filter((i) => i.id !== id) }))
   }, [])
 
+  const criarCompartilhamento = useCallback((c: Omit<Compartilhamento, 'id' | 'criadoEm'>) => {
+    const id = novoId()
+    setDados((d) => ({
+      ...d,
+      compartilhamentos: [{ ...c, id, criadoEm: new Date().toISOString() }, ...d.compartilhamentos],
+    }))
+    return id
+  }, [])
+  const atualizarCompartilhamento = useCallback((id: string, patch: Partial<Compartilhamento>) => {
+    setDados((d) => ({
+      ...d,
+      compartilhamentos: d.compartilhamentos.map((c) => (c.id === id ? { ...c, ...patch } : c)),
+    }))
+  }, [])
+  const removerCompartilhamento = useCallback((id: string) => {
+    setDados((d) => ({ ...d, compartilhamentos: d.compartilhamentos.filter((c) => c.id !== id) }))
+  }, [])
+
+  const criarRecorrencia = useCallback((r: Omit<Recorrencia, 'id' | 'criadaEm'>) => {
+    setDados((d) => ({
+      ...d,
+      recorrencias: [{ ...r, id: novoId(), criadaEm: new Date().toISOString() }, ...d.recorrencias],
+    }))
+  }, [])
+  const atualizarRecorrencia = useCallback((id: string, patch: Partial<Recorrencia>) => {
+    setDados((d) => ({
+      ...d,
+      recorrencias: d.recorrencias.map((r) => (r.id === id ? { ...r, ...patch } : r)),
+    }))
+  }, [])
+  const removerRecorrencia = useCallback((id: string) => {
+    setDados((d) => ({ ...d, recorrencias: d.recorrencias.filter((r) => r.id !== id) }))
+  }, [])
+
   // Replace the whole dataset at once, preserving ids (used by backup import).
   const substituirTudo = useCallback((novos: DadosApp) => {
     setDados(normalizar(novos))
@@ -482,6 +552,12 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       criarItemRaci,
       atualizarItemRaci,
       removerItemRaci,
+      criarCompartilhamento,
+      atualizarCompartilhamento,
+      removerCompartilhamento,
+      criarRecorrencia,
+      atualizarRecorrencia,
+      removerRecorrencia,
       substituirTudo,
       resetar,
       limpar,
@@ -523,6 +599,12 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       criarItemRaci,
       atualizarItemRaci,
       removerItemRaci,
+      criarCompartilhamento,
+      atualizarCompartilhamento,
+      removerCompartilhamento,
+      criarRecorrencia,
+      atualizarRecorrencia,
+      removerRecorrencia,
       substituirTudo,
       resetar,
       limpar,

@@ -87,7 +87,7 @@ export default function Configuracoes() {
   const {
     membros, clientes, projetos, etapas, tarefas, apontamentos,
     despesas, treinamentos, categoriasDespesa, custosArea, usuarioAtualId,
-    tags, itens5w2h, raci,
+    tags, itens5w2h, raci, compartilhamentos, recorrencias,
     resetar, limpar,
   } = store
   const inputRef = useRef<HTMLInputElement>(null)
@@ -96,7 +96,7 @@ export default function Configuracoes() {
     const dados: DadosApp = {
       membros, clientes, projetos, etapas, tarefas, apontamentos,
       despesas, treinamentos, categoriasDespesa, custosArea, usuarioAtualId,
-      tags, itens5w2h, raci,
+      tags, itens5w2h, raci, compartilhamentos, recorrencias,
     }
     const blob = new Blob([JSON.stringify(dados, null, 2)], { type: 'application/json' })
     const url = URL.createObjectURL(blob)

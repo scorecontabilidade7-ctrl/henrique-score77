@@ -30,6 +30,8 @@ export type PaginaPermissao =
   | 'agenda'
   | 'semana'
   | 'horas'
+  | 'recorrencias'
+  | 'compartilhamentos'
   | 'consultores'
   | 'financeiro'
   | 'treinamentos'
@@ -108,6 +110,14 @@ export interface TAP {
   riscos: string
 }
 
+/** A person on the client's side involved in the project (used in RACI). */
+export interface Envolvido {
+  id: string
+  nome: string
+  /** Role/position in the client company, e.g. "Diretor financeiro". */
+  cargo: string
+}
+
 export interface Projeto {
   id: string
   nome: string
@@ -118,6 +128,10 @@ export interface Projeto {
   fim: string | null
   /** PMBOK project charter (Termo de Abertura). */
   tap: TAP
+  /** Consultants on this project's team (a project has at most 3). */
+  equipeIds: string[]
+  /** People on the client side involved in the project (for RACI). */
+  envolvidos: Envolvido[]
 }
 
 /** 5W2H item with GUT prioritization (What/Why/Where/Who/When/How/How much). */
@@ -157,6 +171,16 @@ export interface Tag {
   ehReuniao: boolean
 }
 
+/** A guiding step + base material for a stage — a playbook to guide consultants. */
+export interface PassoEtapa {
+  id: string
+  titulo: string
+  /** What to do in this step (instructions/guidance). */
+  descricao: string
+  /** Link to the base material (Drive/doc/template) used in this step. */
+  materialUrl: string
+}
+
 /** A stage/phase of a project (e.g. "Análise Inicial"). Tasks belong to a stage. */
 export interface Etapa {
   id: string
@@ -165,6 +189,8 @@ export interface Etapa {
   ordem: number
   /** Tailwind text/bg token for the stage marker, e.g. "bg-indigo-500". */
   cor: string
+  /** Playbook: ordered guiding steps with base material for this stage. */
+  roteiro: PassoEtapa[]
 }
 
 export interface ChecklistItem {
@@ -235,6 +261,51 @@ export interface Tarefa {
   criadaEm: string // ISO datetime
 }
 
+/** A file/link attached to a share (usually a Google Drive link). */
+export interface Anexo {
+  id: string
+  nome: string
+  /** URL of the file — a Google Drive (or other) link. */
+  url: string
+}
+
+/** A shareable page with client files/links (can point straight to Drive). */
+export interface Compartilhamento {
+  id: string
+  projetoId: string
+  titulo: string
+  mensagem: string
+  /** Recipient emails. */
+  destinatarios: string[]
+  /** Anyone with the link can open (no specific recipient needed). */
+  qualquerComLink: boolean
+  /** Protect the shared page with a password. */
+  protegido: boolean
+  senha: string
+  /** Ask recipients to approve the shared content. */
+  solicitarAprovacao: boolean
+  anexos: Anexo[]
+  criadoEm: string // ISO datetime
+}
+
+export type FrequenciaRecorrencia = 'semanalmente' | 'dias_semana'
+
+/** A recurring task definition (repeats forever unless it has an end date). */
+export interface Recorrencia {
+  id: string
+  titulo: string
+  projetoId: string | null
+  etapaId: string | null
+  responsaveisIds: string[]
+  frequencia: FrequenciaRecorrencia
+  /** Weekdays (0=Dom … 6=Sáb) when frequencia === 'dias_semana'. */
+  dias: number[]
+  ativa: boolean
+  /** End date (ISO) or null for "never". */
+  termino: string | null
+  criadaEm: string // ISO datetime
+}
+
 /** A time entry: hours a person logged against a task on a given day. */
 export interface Apontamento {
   id: string
@@ -266,4 +337,8 @@ export interface DadosApp {
   itens5w2h: Item5W2H[]
   /** RACI rows (per project). */
   raci: ItemRaci[]
+  /** Shareable client file pages. */
+  compartilhamentos: Compartilhamento[]
+  /** Recurring task definitions. */
+  recorrencias: Recorrencia[]
 }

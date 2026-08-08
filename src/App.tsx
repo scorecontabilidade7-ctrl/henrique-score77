@@ -7,6 +7,9 @@ import ProjetoDetalhe from './pages/ProjetoDetalhe'
 import Agenda from './pages/Agenda'
 import Semana from './pages/Semana'
 import Horas from './pages/Horas'
+import Recorrencias from './pages/Recorrencias'
+import Compartilhamentos from './pages/Compartilhamentos'
+import CompartilhamentoView from './pages/CompartilhamentoView'
 import Consultores from './pages/Consultores'
 import Financeiro from './pages/Financeiro'
 import Treinamentos from './pages/Treinamentos'
@@ -32,6 +35,8 @@ export default function App() {
         <Route path="agenda" element={<P pagina="agenda"><Agenda /></P>} />
         <Route path="semana" element={<P pagina="semana"><Semana /></P>} />
         <Route path="horas" element={<P pagina="horas"><Horas /></P>} />
+        <Route path="recorrencias" element={<P pagina="recorrencias"><Recorrencias /></P>} />
+        <Route path="compartilhamentos" element={<P pagina="compartilhamentos"><Compartilhamentos /></P>} />
         <Route path="consultores" element={<P pagina="consultores"><Consultores /></P>} />
         <Route path="financeiro" element={<P pagina="financeiro"><Financeiro /></P>} />
         <Route path="treinamentos" element={<P pagina="treinamentos"><Treinamentos /></P>} />
@@ -39,6 +44,8 @@ export default function App() {
         <Route path="equipe" element={<P pagina="equipe"><Equipe /></P>} />
         <Route path="configuracoes" element={<P pagina="configuracoes"><Configuracoes /></P>} />
       </Route>
+      {/* Página pública do compartilhamento (fora do layout, acessível por link) */}
+      <Route path="c/:id" element={<CompartilhamentoView />} />
     </Routes>
   )
 }

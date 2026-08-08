@@ -5,9 +5,11 @@ import type { Etapa, Projeto, Tarefa } from '../types'
 import { statusLabel, statusProjeto, STATUS_TAREFA, CORES_ETAPA } from '../lib/labels'
 import { formatarData, formatarBRL, hojeIso, prazoRelativo, estaAtrasada } from '../lib/dates'
 import { horasDaTarefa } from '../lib/workload'
-import { AvatarGroup, Badge, Campo, EmptyState, Modal } from '../components/ui'
+import { Avatar, AvatarGroup, Badge, Campo, EmptyState, Modal } from '../components/ui'
 import { IconLixeira, IconPlus } from '../components/icons'
 import TarefaForm from '../components/TarefaForm'
+
+const novoId = () => `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`
 
 function DespesaForm({ projetoId, onClose }: { projetoId: string; onClose: () => void }) {
   const { categoriasDespesa, criarDespesa, adicionarCategoria } = useStore()
@@ -113,6 +115,7 @@ function EtapaForm({
         nome: nome.trim(),
         ordem: proximaOrdem,
         cor: CORES_ETAPA[(proximaOrdem - 1) % CORES_ETAPA.length],
+        roteiro: [],
       })
     }
     onClose()
@@ -156,6 +159,89 @@ function EtapaForm({
           autoFocus
         />
       </label>
+    </Modal>
+  )
+}
+
+function RoteiroForm({ etapa, onClose }: { etapa: Etapa; onClose: () => void }) {
+  const { atualizarEtapa } = useStore()
+  const [passos, setPassos] = useState(etapa.roteiro)
+
+  function add() {
+    setPassos((p) => [...p, { id: novoId(), titulo: '', descricao: '', materialUrl: '' }])
+  }
+  function set(id: string, patch: Partial<(typeof passos)[number]>) {
+    setPassos((p) => p.map((x) => (x.id === id ? { ...x, ...patch } : x)))
+  }
+  function mover(i: number, delta: number) {
+    setPassos((p) => {
+      const j = i + delta
+      if (j < 0 || j >= p.length) return p
+      const novo = [...p]
+      ;[novo[i], novo[j]] = [novo[j], novo[i]]
+      return novo
+    })
+  }
+  function salvar() {
+    atualizarEtapa(etapa.id, { roteiro: passos.filter((p) => p.titulo.trim()) })
+    onClose()
+  }
+
+  return (
+    <Modal
+      titulo={`Roteiro da etapa — ${etapa.nome}`}
+      onClose={onClose}
+      size="xl"
+      footer={
+        <>
+          <button className="btn-secondary" onClick={onClose}>Cancelar</button>
+          <button className="btn-primary" onClick={salvar}>Salvar roteiro</button>
+        </>
+      }
+    >
+      <div className="space-y-3">
+        <p className="text-sm text-slate-500">
+          Monte um passo a passo com o material-base (links do Drive/modelos) para guiar os consultores nesta etapa.
+        </p>
+        {passos.length === 0 && (
+          <p className="rounded-lg border border-dashed border-slate-300 py-6 text-center text-sm text-slate-400">
+            Nenhum passo ainda. Adicione o primeiro abaixo.
+          </p>
+        )}
+        {passos.map((p, i) => (
+          <div key={p.id} className="rounded-lg border border-slate-200 p-3">
+            <div className="mb-2 flex items-center gap-2">
+              <span className="flex h-6 w-6 items-center justify-center rounded-full bg-slate-100 text-xs font-bold text-slate-600">{i + 1}</span>
+              <input
+                className="input flex-1"
+                placeholder="Título do passo (ex.: Briefing empresarial)"
+                value={p.titulo}
+                onChange={(e) => set(p.id, { titulo: e.target.value })}
+              />
+              <button className="btn-ghost h-8 w-8 !p-0 text-slate-400" onClick={() => mover(i, -1)} aria-label="Subir">↑</button>
+              <button className="btn-ghost h-8 w-8 !p-0 text-slate-400" onClick={() => mover(i, 1)} aria-label="Descer">↓</button>
+              <button className="text-slate-300 hover:text-rose-600" onClick={() => setPassos((ps) => ps.filter((x) => x.id !== p.id))} aria-label="Remover">
+                <IconLixeira width={15} height={15} />
+              </button>
+            </div>
+            <textarea
+              className="input mb-2 min-h-[54px] resize-y text-sm"
+              placeholder="Como fazer / o que orientar…"
+              value={p.descricao}
+              onChange={(e) => set(p.id, { descricao: e.target.value })}
+            />
+            <input
+              className="input text-sm"
+              placeholder="Link do material base (Drive/modelo)…"
+              value={p.materialUrl}
+              onChange={(e) => set(p.id, { materialUrl: e.target.value })}
+            />
+          </div>
+        ))}
+        <button className="btn-secondary" onClick={add}>
+          <IconPlus width={16} height={16} /> Adicionar passo
+        </button>
+      </div>
     </Modal>
   )
 }
@@ -414,10 +500,44 @@ const PAPEIS: { v: 'R' | 'A' | 'C' | 'I' | ''; cor: string }[] = [
   { v: 'I', cor: 'text-slate-600 bg-slate-100' },
 ]
 
+const MAX_EQUIPE = 3
+
 function AbaRaci({ projeto }: { projeto: Projeto }) {
-  const { membros, etapas, raci, criarItemRaci, atualizarItemRaci, removerItemRaci } = useStore()
+  const { membros, etapas, raci, atualizarProjeto, criarItemRaci, atualizarItemRaci, removerItemRaci } = useStore()
   const linhas = raci.filter((r) => r.projetoId === projeto.id)
   const [nova, setNova] = useState('')
+  const [novoEnv, setNovoEnv] = useState({ nome: '', cargo: '' })
+
+  // Columns = project team consultants (max 3) + client-side involved people.
+  const equipe = projeto.equipeIds
+    .map((id) => membros.find((m) => m.id === id))
+    .filter((m): m is (typeof membros)[number] => Boolean(m))
+  const pessoas: { id: string; nome: string; cliente: boolean }[] = [
+    ...equipe.map((m) => ({ id: m.id, nome: m.nome.split(' ')[0], cliente: false })),
+    ...projeto.envolvidos.map((e) => ({ id: e.id, nome: e.nome.split(' ')[0], cliente: true })),
+  ]
+  const foraDaEquipe = membros.filter((m) => !projeto.equipeIds.includes(m.id))
+
+  function addConsultor(id: string) {
+    if (!id || projeto.equipeIds.length >= MAX_EQUIPE || projeto.equipeIds.includes(id)) return
+    atualizarProjeto(projeto.id, { equipeIds: [...projeto.equipeIds, id] })
+  }
+  function rmConsultor(id: string) {
+    atualizarProjeto(projeto.id, { equipeIds: projeto.equipeIds.filter((x) => x !== id) })
+  }
+  function addEnvolvido() {
+    if (!novoEnv.nome.trim()) return
+    atualizarProjeto(projeto.id, {
+      envolvidos: [
+        ...projeto.envolvidos,
+        { id: novoId(), nome: novoEnv.nome.trim(), cargo: novoEnv.cargo.trim() },
+      ],
+    })
+    setNovoEnv({ nome: '', cargo: '' })
+  }
+  function rmEnvolvido(id: string) {
+    atualizarProjeto(projeto.id, { envolvidos: projeto.envolvidos.filter((e) => e.id !== id) })
+  }
 
   function adicionar(nome: string) {
     if (!nome.trim()) return
@@ -434,89 +554,152 @@ function AbaRaci({ projeto }: { projeto: Projeto }) {
         }
       })
   }
-  function setPapel(id: string, membroId: string, valor: string) {
+  function setPapel(id: string, pessoaId: string, valor: string) {
     const linha = linhas.find((l) => l.id === id)
     if (!linha) return
-    atualizarItemRaci(id, { papeis: { ...linha.papeis, [membroId]: valor as never } })
+    atualizarItemRaci(id, { papeis: { ...linha.papeis, [pessoaId]: valor as never } })
   }
 
   return (
-    <section className="card overflow-hidden">
-      <div className="flex items-center justify-between border-b border-slate-200 px-5 py-4">
-        <div>
-          <h2 className="font-semibold text-slate-800">Matriz RACI</h2>
-          <p className="text-xs text-slate-500">R responsável · A autoridade · C consultado · I informado</p>
-        </div>
-        {etapas.some((e) => e.projetoId === projeto.id) && (
-          <button className="btn-secondary" onClick={gerarDasEtapas}>Gerar das etapas</button>
-        )}
-      </div>
-      {linhas.length === 0 ? (
-        <p className="px-5 py-6 text-center text-sm text-slate-400">
-          Nenhuma atividade. Adicione abaixo ou gere a partir das etapas.
-        </p>
-      ) : (
-        <div className="overflow-x-auto scrollbar-thin">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b border-slate-200 text-xs uppercase tracking-wide text-slate-400">
-                <th className="px-4 py-2 text-left font-medium">Atividade</th>
-                {membros.map((m) => (
-                  <th key={m.id} className="px-2 py-2 text-center font-medium" title={m.nome}>
-                    {m.nome.split(' ')[0]}
-                  </th>
-                ))}
-                <th className="px-2 py-2"></th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100">
-              {linhas.map((l) => (
-                <tr key={l.id}>
-                  <td className="px-4 py-2 font-medium text-slate-800">{l.atividade}</td>
-                  {membros.map((m) => (
-                    <td key={m.id} className="px-1 py-1 text-center">
-                      <select
-                        value={l.papeis[m.id] ?? ''}
-                        onChange={(e) => setPapel(l.id, m.id, e.target.value)}
-                        className={`w-12 rounded border border-slate-200 px-1 py-1 text-center text-xs font-semibold ${
-                          PAPEIS.find((p) => p.v === (l.papeis[m.id] ?? ''))?.cor ?? ''
-                        }`}
-                      >
-                        {PAPEIS.map((p) => (
-                          <option key={p.v} value={p.v}>{p.v || '—'}</option>
-                        ))}
-                      </select>
-                    </td>
-                  ))}
-                  <td className="px-2 py-1 text-right">
-                    <button className="text-slate-300 hover:text-rose-600" onClick={() => removerItemRaci(l.id)} aria-label="Remover">
-                      <IconLixeira width={15} height={15} />
-                    </button>
-                  </td>
-                </tr>
+    <div className="space-y-5">
+      {/* Equipe do projeto + envolvidos do cliente */}
+      <section className="card p-5">
+        <div className="grid gap-5 sm:grid-cols-2">
+          <div>
+            <h3 className="text-sm font-semibold text-slate-800">
+              Equipe do projeto <span className="font-normal text-slate-400">(máx. {MAX_EQUIPE} consultores)</span>
+            </h3>
+            <div className="mt-2 flex flex-wrap gap-2">
+              {equipe.map((m) => (
+                <span key={m.id} className="inline-flex items-center gap-1.5 rounded-full border border-brand-400 bg-brand-50 py-1 pl-1 pr-2 text-sm text-brand-700">
+                  <Avatar membro={m} size="sm" />
+                  {m.nome.split(' ')[0]}
+                  <button className="text-brand-400 hover:text-rose-600" onClick={() => rmConsultor(m.id)} aria-label={`Remover ${m.nome}`}>×</button>
+                </span>
               ))}
-            </tbody>
-          </table>
+              {equipe.length === 0 && <span className="text-sm text-slate-400">Nenhum consultor ainda.</span>}
+            </div>
+            {projeto.equipeIds.length < MAX_EQUIPE ? (
+              <select className="input mt-3 max-w-[220px]" value="" onChange={(e) => addConsultor(e.target.value)}>
+                <option value="">+ Adicionar consultor…</option>
+                {foraDaEquipe.map((m) => (
+                  <option key={m.id} value={m.id}>{m.nome}</option>
+                ))}
+              </select>
+            ) : (
+              <p className="mt-3 text-xs text-slate-400">Limite de {MAX_EQUIPE} consultores atingido.</p>
+            )}
+          </div>
+
+          <div>
+            <h3 className="text-sm font-semibold text-slate-800">Envolvidos do cliente</h3>
+            <div className="mt-2 space-y-1.5">
+              {projeto.envolvidos.map((e) => (
+                <div key={e.id} className="flex items-center gap-2 rounded-md bg-slate-50 px-2 py-1.5 text-sm">
+                  <Badge className="bg-amber-100 text-amber-700">Cliente</Badge>
+                  <span className="font-medium text-slate-700">{e.nome}</span>
+                  {e.cargo && <span className="text-xs text-slate-400">· {e.cargo}</span>}
+                  <button className="ml-auto text-slate-300 hover:text-rose-600" onClick={() => rmEnvolvido(e.id)} aria-label={`Remover ${e.nome}`}>
+                    <IconLixeira width={14} height={14} />
+                  </button>
+                </div>
+              ))}
+              {projeto.envolvidos.length === 0 && <span className="text-sm text-slate-400">Nenhum envolvido do cliente.</span>}
+            </div>
+            <div className="mt-3 flex flex-wrap gap-2">
+              <input className="input max-w-[150px]" placeholder="Nome" value={novoEnv.nome} onChange={(e) => setNovoEnv({ ...novoEnv, nome: e.target.value })} />
+              <input className="input max-w-[150px]" placeholder="Cargo na empresa" value={novoEnv.cargo} onChange={(e) => setNovoEnv({ ...novoEnv, cargo: e.target.value })} onKeyDown={(e) => e.key === 'Enter' && addEnvolvido()} />
+              <button className="btn-secondary" onClick={addEnvolvido}>
+                <IconPlus width={16} height={16} /> Adicionar
+              </button>
+            </div>
+          </div>
         </div>
-      )}
-      <div className="flex flex-wrap items-center gap-2 border-t border-slate-100 px-5 py-3">
-        <input
-          className="input max-w-[280px]"
-          placeholder="Nova atividade / entrega"
-          value={nova}
-          onChange={(e) => setNova(e.target.value)}
-          onKeyDown={(e) => {
-            if (e.key === 'Enter') {
-              adicionar(nova)
-              setNova('')
-            }
-          }}
-        />
-        <button className="btn-secondary" onClick={() => { adicionar(nova); setNova('') }}>
-          <IconPlus width={16} height={16} /> Adicionar
-        </button>
-      </div>
-    </section>
+      </section>
+
+      {/* Matriz RACI */}
+      <section className="card overflow-hidden">
+        <div className="flex items-center justify-between border-b border-slate-200 px-5 py-4">
+          <div>
+            <h2 className="font-semibold text-slate-800">Matriz RACI</h2>
+            <p className="text-xs text-slate-500">R responsável · A autoridade · C consultado · I informado</p>
+          </div>
+          {etapas.some((e) => e.projetoId === projeto.id) && (
+            <button className="btn-secondary" onClick={gerarDasEtapas}>Gerar das etapas</button>
+          )}
+        </div>
+        {pessoas.length === 0 ? (
+          <p className="px-5 py-6 text-center text-sm text-slate-400">
+            Defina a equipe do projeto e os envolvidos do cliente acima para montar a matriz.
+          </p>
+        ) : linhas.length === 0 ? (
+          <p className="px-5 py-6 text-center text-sm text-slate-400">
+            Nenhuma atividade. Adicione abaixo ou gere a partir das etapas.
+          </p>
+        ) : (
+          <div className="overflow-x-auto scrollbar-thin">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-slate-200 text-xs uppercase tracking-wide text-slate-400">
+                  <th className="px-4 py-2 text-left font-medium">Atividade</th>
+                  {pessoas.map((p) => (
+                    <th key={p.id} className="px-2 py-2 text-center font-medium" title={p.nome}>
+                      <span className={p.cliente ? 'text-amber-600' : ''}>{p.nome}</span>
+                      {p.cliente && <span className="block text-[9px] font-normal text-amber-400">cliente</span>}
+                    </th>
+                  ))}
+                  <th className="px-2 py-2"></th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                {linhas.map((l) => (
+                  <tr key={l.id}>
+                    <td className="px-4 py-2 font-medium text-slate-800">{l.atividade}</td>
+                    {pessoas.map((p) => (
+                      <td key={p.id} className="px-1 py-1 text-center">
+                        <select
+                          value={l.papeis[p.id] ?? ''}
+                          onChange={(e) => setPapel(l.id, p.id, e.target.value)}
+                          className={`w-12 rounded border border-slate-200 px-1 py-1 text-center text-xs font-semibold ${
+                            PAPEIS.find((x) => x.v === (l.papeis[p.id] ?? ''))?.cor ?? ''
+                          }`}
+                        >
+                          {PAPEIS.map((x) => (
+                            <option key={x.v} value={x.v}>{x.v || '—'}</option>
+                          ))}
+                        </select>
+                      </td>
+                    ))}
+                    <td className="px-2 py-1 text-right">
+                      <button className="text-slate-300 hover:text-rose-600" onClick={() => removerItemRaci(l.id)} aria-label="Remover">
+                        <IconLixeira width={15} height={15} />
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+        <div className="flex flex-wrap items-center gap-2 border-t border-slate-100 px-5 py-3">
+          <input
+            className="input max-w-[280px]"
+            placeholder="Nova atividade / entrega"
+            value={nova}
+            onChange={(e) => setNova(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') {
+                adicionar(nova)
+                setNova('')
+              }
+            }}
+          />
+          <button className="btn-secondary" onClick={() => { adicionar(nova); setNova('') }}>
+            <IconPlus width={16} height={16} /> Adicionar
+          </button>
+        </div>
+      </section>
+    </div>
   )
 }
 
@@ -527,6 +710,7 @@ export default function ProjetoDetalhe() {
   const projeto = projetos.find((p) => p.id === id)
   const [etapaForm, setEtapaForm] = useState<{ open: boolean; etapa?: Etapa | null }>({ open: false })
   const [tarefaForm, setTarefaForm] = useState<{ open: boolean; tarefa?: Tarefa | null; etapaId?: string }>({ open: false })
+  const [roteiroForm, setRoteiroForm] = useState<Etapa | null>(null)
   const [despesaForm, setDespesaForm] = useState(false)
   const [aba, setAba] = useState<'geral' | 'tap' | '5w2h' | 'raci'>('geral')
 
@@ -670,14 +854,50 @@ export default function ProjetoDetalhe() {
                 </button>
                 <span className="text-xs text-slate-400">({tEtapa.length})</span>
               </div>
-              <button
-                className="btn-ghost text-sm"
-                onClick={() => setTarefaForm({ open: true, tarefa: null, etapaId: etapa.id })}
-              >
-                <IconPlus width={14} height={14} />
-                Atividade
-              </button>
+              <div className="flex items-center gap-1">
+                <button
+                  className="btn-ghost text-sm"
+                  onClick={() => setRoteiroForm(etapa)}
+                >
+                  Roteiro{etapa.roteiro.length > 0 ? ` (${etapa.roteiro.length})` : ''}
+                </button>
+                <button
+                  className="btn-ghost text-sm"
+                  onClick={() => setTarefaForm({ open: true, tarefa: null, etapaId: etapa.id })}
+                >
+                  <IconPlus width={14} height={14} />
+                  Atividade
+                </button>
+              </div>
             </div>
+
+            {/* Roteiro / material-base para guiar os consultores */}
+            {etapa.roteiro.length > 0 && (
+              <div className="border-b border-slate-100 bg-slate-50/70 px-4 py-3">
+                <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-400">
+                  Roteiro de apoio
+                </p>
+                <ol className="space-y-2">
+                  {etapa.roteiro.map((p, i) => (
+                    <li key={p.id} className="flex gap-2.5">
+                      <span className={`mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[10px] font-bold text-white ${etapa.cor}`}>
+                        {i + 1}
+                      </span>
+                      <div className="min-w-0">
+                        <p className="text-sm font-medium text-slate-700">{p.titulo}</p>
+                        {p.descricao && <p className="text-xs text-slate-500">{p.descricao}</p>}
+                        {p.materialUrl && (
+                          <a href={p.materialUrl} target="_blank" rel="noreferrer" className="text-xs font-medium text-brand-600 hover:underline">
+                            📎 Material de apoio
+                          </a>
+                        )}
+                      </div>
+                    </li>
+                  ))}
+                </ol>
+              </div>
+            )}
+
             {tEtapa.length === 0 ? (
               <p className="px-4 py-6 text-center text-sm text-slate-400">
                 Nenhuma atividade nesta etapa ainda.
@@ -781,6 +1001,7 @@ export default function ProjetoDetalhe() {
         />
       )}
       {despesaForm && <DespesaForm projetoId={projeto.id} onClose={() => setDespesaForm(false)} />}
+      {roteiroForm && <RoteiroForm etapa={roteiroForm} onClose={() => setRoteiroForm(null)} />}
     </div>
   )
 }

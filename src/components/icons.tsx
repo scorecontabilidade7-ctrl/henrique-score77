@@ -176,3 +176,21 @@ export const IconParar = (p: IconProps) => (
     <rect x="6" y="6" width="12" height="12" rx="2" />
   </svg>
 )
+
+export const IconRepetir = (p: IconProps) => (
+  <svg {...base(p)}>
+    <path d="M17 2l4 4-4 4" />
+    <path d="M3 11V9a4 4 0 0 1 4-4h14" />
+    <path d="M7 22l-4-4 4-4" />
+    <path d="M21 13v2a4 4 0 0 1-4 4H3" />
+  </svg>
+)
+
+export const IconCompartilhar = (p: IconProps) => (
+  <svg {...base(p)}>
+    <circle cx="18" cy="5" r="3" />
+    <circle cx="6" cy="12" r="3" />
+    <circle cx="18" cy="19" r="3" />
+    <path d="M8.6 13.5l6.8 4M15.4 6.5l-6.8 4" />
+  </svg>
+)

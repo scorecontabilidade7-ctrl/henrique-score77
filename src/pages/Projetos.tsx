@@ -27,7 +27,7 @@ function ProjetoForm({ projeto, onClose }: { projeto?: Projeto | null; onClose: 
       fim: fim || null,
     }
     if (projeto) atualizarProjeto(projeto.id, payload)
-    else criarProjeto({ ...payload, tap: TAP_VAZIO })
+    else criarProjeto({ ...payload, tap: TAP_VAZIO, equipeIds: [], envolvidos: [] })
     onClose()
   }
 

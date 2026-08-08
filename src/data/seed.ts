@@ -59,24 +59,28 @@ export const dadosIniciais: DadosApp = {
     { id: 'c16', nome: 'Naturally Padaria', cnpj: '66.777.888/0001-99', regime: 'simples_nacional', responsavelId: 'm4', assistentesIds: ['m2'], ativo: false, valorMensal: 1800, segmento: 'Alimentação' },
   ],
   projetos: [
-    { id: 'p1', nome: 'Consultoria Financeira', clienteId: 'c3', descricao: 'Implantação de gestão financeira: plano de contas, fluxo de caixa, contas a pagar/receber e planejamento orçamentário.', status: 'em_andamento', inicio: isoRelativo(-30), fim: isoRelativo(120), tap: tapP1 },
-    { id: 'p2', nome: 'Implantação de sistema contábil', clienteId: 'c2', descricao: 'Migração de dados e treinamento da equipe interna da TechNova.', status: 'em_andamento', inicio: isoRelativo(-10), fim: isoRelativo(50), tap: tapVazio },
-    { id: 'p3', nome: 'Abertura de filial', clienteId: 'c6', descricao: 'Constituição de nova unidade e regularização de licenças.', status: 'planejado', inicio: isoRelativo(5), fim: isoRelativo(40), tap: tapVazio },
+    { id: 'p1', nome: 'Consultoria Financeira', clienteId: 'c3', descricao: 'Implantação de gestão financeira: plano de contas, fluxo de caixa, contas a pagar/receber e planejamento orçamentário.', status: 'em_andamento', inicio: isoRelativo(-30), fim: isoRelativo(120), tap: tapP1, equipeIds: ['m1','m2','m3'], envolvidos: [ { id: 'ev1', nome: 'Roberto Alicerce', cargo: 'Diretor / Sponsor' }, { id: 'ev2', nome: 'Fernanda Lima', cargo: 'Gerente financeira' } ] },
+    { id: 'p2', nome: 'Implantação de sistema contábil', clienteId: 'c2', descricao: 'Migração de dados e treinamento da equipe interna da TechNova.', status: 'em_andamento', inicio: isoRelativo(-10), fim: isoRelativo(50), tap: tapVazio, equipeIds: ['m2','m3'], envolvidos: [] },
+    { id: 'p3', nome: 'Abertura de filial', clienteId: 'c6', descricao: 'Constituição de nova unidade e regularização de licenças.', status: 'planejado', inicio: isoRelativo(5), fim: isoRelativo(40), tap: tapVazio, equipeIds: ['m4','m5'], envolvidos: [] },
   ],
   etapas: [
     // Projeto 1 — fluxo de consultoria financeira (baseado no cronograma)
-    { id: 'e1', projetoId: 'p1', nome: 'Análise Inicial', ordem: 1, cor: 'bg-indigo-500' },
-    { id: 'e2', projetoId: 'p1', nome: 'Organização', ordem: 2, cor: 'bg-emerald-500' },
-    { id: 'e3', projetoId: 'p1', nome: 'Controle', ordem: 3, cor: 'bg-amber-500' },
-    { id: 'e4', projetoId: 'p1', nome: 'Análise', ordem: 4, cor: 'bg-rose-500' },
-    { id: 'e5', projetoId: 'p1', nome: 'Planejamento', ordem: 5, cor: 'bg-sky-500' },
+    { id: 'e1', projetoId: 'p1', nome: 'Análise Inicial', ordem: 1, cor: 'bg-indigo-500', roteiro: [
+      { id: 'pe1', titulo: 'Alinhamento inicial', descricao: 'Reunião de abertura: apresentar o time, o cronograma e combinar a rotina de contato com o cliente.', materialUrl: 'https://drive.google.com/roteiro-alinhamento' },
+      { id: 'pe2', titulo: 'Briefing empresarial', descricao: 'Aplicar o questionário de diagnóstico e coletar documentos dos últimos 3 meses.', materialUrl: 'https://drive.google.com/modelo-briefing' },
+      { id: 'pe3', titulo: 'Apresentação do cronograma', descricao: 'Validar etapas e responsáveis com o cliente usando o modelo padrão.', materialUrl: 'https://drive.google.com/modelo-cronograma' },
+    ] },
+    { id: 'e2', projetoId: 'p1', nome: 'Organização', ordem: 2, cor: 'bg-emerald-500', roteiro: [] },
+    { id: 'e3', projetoId: 'p1', nome: 'Controle', ordem: 3, cor: 'bg-amber-500', roteiro: [] },
+    { id: 'e4', projetoId: 'p1', nome: 'Análise', ordem: 4, cor: 'bg-rose-500', roteiro: [] },
+    { id: 'e5', projetoId: 'p1', nome: 'Planejamento', ordem: 5, cor: 'bg-sky-500', roteiro: [] },
     // Projeto 2
-    { id: 'e6', projetoId: 'p2', nome: 'Levantamento', ordem: 1, cor: 'bg-indigo-500' },
-    { id: 'e7', projetoId: 'p2', nome: 'Migração', ordem: 2, cor: 'bg-emerald-500' },
-    { id: 'e8', projetoId: 'p2', nome: 'Treinamento', ordem: 3, cor: 'bg-amber-500' },
+    { id: 'e6', projetoId: 'p2', nome: 'Levantamento', ordem: 1, cor: 'bg-indigo-500', roteiro: [] },
+    { id: 'e7', projetoId: 'p2', nome: 'Migração', ordem: 2, cor: 'bg-emerald-500', roteiro: [] },
+    { id: 'e8', projetoId: 'p2', nome: 'Treinamento', ordem: 3, cor: 'bg-amber-500', roteiro: [] },
     // Projeto 3
-    { id: 'e9', projetoId: 'p3', nome: 'Documentação', ordem: 1, cor: 'bg-indigo-500' },
-    { id: 'e10', projetoId: 'p3', nome: 'Regularização', ordem: 2, cor: 'bg-emerald-500' },
+    { id: 'e9', projetoId: 'p3', nome: 'Documentação', ordem: 1, cor: 'bg-indigo-500', roteiro: [] },
+    { id: 'e10', projetoId: 'p3', nome: 'Regularização', ordem: 2, cor: 'bg-emerald-500', roteiro: [] },
   ],
   tarefas: [
     // --- Projeto 1: Consultoria Financeira ---
@@ -193,9 +197,18 @@ export const dadosIniciais: DadosApp = {
     { id: 'w3', projetoId: 'p1', oQue: 'Contratar ferramenta de BI', porQue: 'Relatórios gerenciais', onde: 'Gestão', quemId: 'm1', quando: isoRelativo(20), como: 'Assinatura mensal', quanto: 300, g: 3, u: 3, t: 4, status: 'a_fazer' },
   ],
   raci: [
-    { id: 'rc1', projetoId: 'p1', atividade: 'Definição do escopo', papeis: { m1: 'A', m2: 'R', m3: 'C', m5: 'C' } },
-    { id: 'rc2', projetoId: 'p1', atividade: 'Plano de contas', papeis: { m1: 'A', m3: 'R', m2: 'C' } },
-    { id: 'rc3', projetoId: 'p1', atividade: 'Fluxo de caixa', papeis: { m1: 'A', m2: 'R', m5: 'C', m3: 'I' } },
-    { id: 'rc4', projetoId: 'p1', atividade: 'Relatório final', papeis: { m1: 'A', m2: 'R', m3: 'C', m4: 'I' } },
+    { id: 'rc1', projetoId: 'p1', atividade: 'Definição do escopo', papeis: { m1: 'A', m2: 'R', m3: 'C', ev1: 'I' } },
+    { id: 'rc2', projetoId: 'p1', atividade: 'Plano de contas', papeis: { m1: 'A', m3: 'R', m2: 'C', ev2: 'C' } },
+    { id: 'rc3', projetoId: 'p1', atividade: 'Fluxo de caixa', papeis: { m1: 'A', m2: 'R', m3: 'I', ev2: 'C' } },
+    { id: 'rc4', projetoId: 'p1', atividade: 'Relatório final', papeis: { m1: 'A', m2: 'R', m3: 'C', ev1: 'I' } },
+  ],
+  compartilhamentos: [
+    { id: 'sh1', projetoId: 'p1', titulo: 'Relatórios financeiros — Alicerce', mensagem: 'Segue a pasta com o DRE, DFC e a curva ABC do trimestre. Qualquer dúvida estamos à disposição.', destinatarios: ['financeiro@alicerce.com.br'], qualquerComLink: false, protegido: false, senha: '', solicitarAprovacao: true, anexos: [ { id: 'ax1', nome: 'DRE 3º trimestre.xlsx', url: 'https://drive.google.com/file/dre-3tri' }, { id: 'ax2', nome: 'Curva ABC.pdf', url: 'https://drive.google.com/file/curva-abc' } ], criadoEm: agora() },
+  ],
+  recorrencias: [
+    { id: 'rr1', titulo: 'Treinamento interno', projetoId: null, etapaId: null, responsaveisIds: ['m1','m2','m3','m5'], frequencia: 'semanalmente', dias: [], ativa: true, termino: null, criadaEm: agora() },
+    { id: 'rr2', titulo: 'Alinhamento diário consultoria', projetoId: 'p1', etapaId: 'e2', responsaveisIds: ['m1','m2','m5'], frequencia: 'dias_semana', dias: [1,2,3,4,5], ativa: true, termino: null, criadaEm: agora() },
+    { id: 'rr3', titulo: 'Verificar/corrigir o caixa', projetoId: 'p2', etapaId: null, responsaveisIds: ['m3'], frequencia: 'dias_semana', dias: [1,2,3,4,5,6], ativa: true, termino: null, criadaEm: agora() },
+    { id: 'rr4', titulo: 'Fechamento de folha', projetoId: null, etapaId: null, responsaveisIds: ['m4'], frequencia: 'dias_semana', dias: [5], ativa: false, termino: null, criadaEm: agora() },
   ],
 }

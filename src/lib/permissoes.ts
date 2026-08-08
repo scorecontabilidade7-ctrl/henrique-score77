@@ -8,6 +8,8 @@ export const PAGINAS: { id: PaginaPermissao; label: string }[] = [
   { id: 'agenda', label: 'Agenda' },
   { id: 'semana', label: 'Semana' },
   { id: 'horas', label: 'Horas' },
+  { id: 'recorrencias', label: 'Recorrências' },
+  { id: 'compartilhamentos', label: 'Compartilhamentos' },
   { id: 'consultores', label: 'Consultores' },
   { id: 'financeiro', label: 'Financeiro' },
   { id: 'treinamentos', label: 'Treinamentos' },
@@ -23,11 +25,12 @@ export const PERMISSOES_PADRAO: Record<Perfil, PaginaPermissao[]> = {
   administrador: [...TODAS],
   gestor: [
     'painel', 'tarefas', 'projetos', 'agenda', 'semana', 'horas',
+    'recorrencias', 'compartilhamentos',
     'consultores', 'financeiro', 'treinamentos', 'clientes',
   ],
   consultor: [
     'painel', 'tarefas', 'projetos', 'agenda', 'semana', 'horas',
-    'treinamentos', 'clientes',
+    'recorrencias', 'compartilhamentos', 'treinamentos', 'clientes',
   ],
 }
 
